@@ -1,0 +1,138 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}Narzędzie: Audyt Geograficzny POI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Audyt Spójności Geograficznej</h1>
+            <p class="col-md-8 fs-4">
+                To narzędzie skanuje wszystkie punkty POI i weryfikuje, czy ich współrzędne
+                zgadzają się z geometrią przypisanych im regionów w całej hierarchii.
+            </p>
+        </div>
+    </div>
+
+    {# --- GŁÓWNY BLOK WYNIKÓW --- #}
+    {% if problematic_pois_page %}
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">Znaleziono problemy!</h4>
+            <p>Poniżej znajduje się lista {{ problematic_pois_page.paginator.count }} punktów POI, dla których wykryto niezgodności lub braki danych.</p>
+        </div>
+
+        <div class="accordion" id="auditAccordion">
+            {% for item in problematic_pois_page %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header d-flex align-items-center" id="heading-{{ item.poi.id }}">
+                        <a href="{% url 'odznaki:poi-detail' poi_id=item.poi.id %}"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-secondary flex-shrink-0 me-2"
+                           title="Otwórz szczegóły POI w nowej karcie">
+                            🔗
+                        </a>
+                        <button class="accordion-button collapsed flex-grow-1"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-{{ item.poi.id }}">
+                            <span class="badge bg-danger me-2">Błąd</span>
+                            <strong>{{ item.poi.name }}</strong>
+                            <small class="text-muted ms-2">(ID: {{ item.poi.id }})</small>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ item.poi.id }}" class="accordion-collapse collapse" data-bs-parent="#auditAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <h5>Szczegóły Niezgodności:</h5>
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Poziom Hierarchii</th>
+                                                <th>Aktualny Region</th>
+                                                <th>Status</th>
+                                                <th>Sugerowany Region</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for error in item.errors %}
+                                                <tr>
+                                                    <td>{{ error.level }}</td>
+                                                    <td>
+                                                        {% if error.expected_region %}
+                                                            <a href="{% url 'odznaki:geography-region-detail' model_name=error.expected_region|model_name pk=error.expected_region.pk %}" class="app-link" target="_blank">
+                                                                {{ error.expected_region.name }}
+                                                            </a>
+                                                        {% else %}
+                                                            <span class="text-muted">Brak danych</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if error.status == 'Niezgodny' %}<span class="badge bg-danger">{{ error.status }}</span>
+                                                        {% else %}<span class="badge bg-secondary">{{ error.status }}</span>{% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if error.suggestion %}
+                                                            {% for s in error.suggestion %}
+                                                                <a href="{% url 'odznaki:geography-region-detail' model_name=s|model_name pk=s.pk %}" class="app-link link-success" target="_blank">
+                                                                    {{ s.name }}
+                                                                </a>
+                                                                {% if not forloop.last %}, {% endif %}
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <a href="{% url 'admin:odznaki_pointofinterest_change' item.poi.id %}" target="_blank" class="btn btn-secondary mt-3">
+                                        Edytuj ten POI w Panelu Admina
+                                    </a>
+                                </div>
+                                <div class="col-lg-6">
+                                    <h5 class="mt-3 mt-lg-0">Wizualizacja Błędu:</h5>
+                                    {% if item.map_html %}
+                                        <div style="height: 400px;">
+                                            {{ item.map_html|safe }}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Nie można było wygenerować mapy.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {# --- SEKCJA PAGINACJI --- #}
+        {% if problematic_pois_page.has_other_pages %}
+        <nav aria-label="Paginacja audytu" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if problematic_pois_page.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1">&laquo; pierwsza</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ problematic_pois_page.previous_page_number }}">poprzednia</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Strona {{ problematic_pois_page.number }} z {{ problematic_pois_page.paginator.num_pages }}.</span></li>
+                {% if problematic_pois_page.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ problematic_pois_page.next_page_number }}">następna</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ problematic_pois_page.paginator.num_pages }}">ostatnia &raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <div class="alert alert-success">
+            <h4 class="alert-heading">Wszystko w porządku!</h4>
+            <p class="mb-0">Audyt został zakończony. Nie znaleziono żadnych niezgodności geometrycznych dla punktów POI.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

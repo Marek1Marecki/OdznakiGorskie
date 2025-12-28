@@ -1,0 +1,57 @@
+{% if pois_on_page %}
+    <div class="table-responsive">
+        <table id="poi-table" class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Status</th>
+                    <th>Nazwa POI</th>
+                    <th>Wysokość</th>
+                    <th>Region</th>
+                    <th>Typ</th>
+                </tr>
+                <tr class="filter-row">
+                    <th>Filtruj...</th>
+                    <th></th>
+                    <th></th>
+                    <th>Filtruj...</th>
+                    <th>Filtruj...</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for poi_data in pois_on_page %} {# Zmieniamy 'poi' na 'poi_data' dla czytelności #}
+                    <tr>
+                        <td>
+                            {# Używamy `poi_data.status` #}
+                            {% if poi_data.status == 'zdobyty' %}<span class="badge bg-success">Zdobyty</span>
+                            {% elif poi_data.status == 'do_ponowienia' %}<span class="badge bg-primary">Do ponowienia</span>
+                            {% elif poi_data.status == 'niezdobyty' %}<span class="badge bg-danger">Do zdobycia</span>
+                            {% else %}<span class="badge bg-secondary">Nieaktywny</span>{% endif %}
+                        </td>
+                        <td>
+                            {# Używamy `poi_data.poi` do dostępu do obiektu POI #}
+                            <a href="{% url 'odznaki:poi-detail' poi_id=poi_data.poi.id %}" class="app-link fw-bold">{{ poi_data.poi.name }}</a>
+                            {% if poi_data.poi.secondary_name %}<br><small class="text-muted">{{ poi_data.poi.secondary_name }}</small>{% endif %}
+                        </td>
+                        <td>
+                            {% if poi_data.poi.height %}{{ poi_data.poi.height }} m{% else %}<span class="text-muted">-</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if poi_data.poi.mesoregion %}
+                                <a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=poi_data.poi.mesoregion.pk %}" class="app-link small text-muted">
+                                    {{ poi_data.poi.mesoregion.name }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark fw-normal">{{ poi_data.poi.get_category_display }}</span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="text-muted text-center">Brak punktów turystycznych w tym regionie.</p>
+{% endif %}

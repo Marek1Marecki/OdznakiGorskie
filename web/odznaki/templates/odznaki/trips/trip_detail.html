@@ -1,0 +1,190 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}Wycieczka: {{ trip }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {# --- Nagłówek --- #}
+    <h1 class="mb-1">{{ trip }}</h1>
+    {% if trip.date %}
+    <p class="lead text-muted">Data: {{ trip.date|date:"d F Y" }}</p>
+    {% endif %}
+    <hr>
+
+    <div class="row g-4">
+        {# --- Główna, lewa kolumna --- #}
+        <div class="col-lg-8">
+
+            {# --- Mapa Wycieczki --- #}
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Mapa Trasy i Odkryte POI</h5></div>
+                <div class="card-body p-0" style="height: 500px;">
+                    {{ folium_map|safe }}
+                </div>
+            </div>
+
+            {# --- NOWA SEKCJA: PROFIL WYSOKOŚCIOWY --- #}
+            {% if elevation_profile_data %}
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Profil Wysokościowy Trasy</h5></div>
+                <div class="card-body">
+                    <div style="height: 200px;">
+                        <canvas id="elevationProfileChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {# --- KONIEC NOWEJ SEKCJI --- #}
+
+            {# --- Opis Wycieczki (CKEditor) --- #}
+            {% if trip.description %}
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">Opis i Notatki</h5></div>
+                <div class="card-body">
+                    {{ trip.description|safe }}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        {# --- Boczna, prawa kolumna (bez zmian) --- #}
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Trasa Przebiega Przez Regiony</h5></div>
+                {% if mesoregions_on_route %}
+                    <div class="list-group list-group-flush">
+                        {% for region in mesoregions_on_route %}
+                            <div class="list-group-item"><a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=region.pk %}" class="app-link">{{ region.name }}</a></div>
+                        {% endfor %}
+                    </div>
+                {% else %}<div class="card-body"><p class="text-muted">Brak danych o regionach dla tej trasy.</p></div>{% endif %}
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Podsumowanie Trasy</h5></div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Dystans:</strong><span>{{ trip.total_distance_km }} km</span></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Suma podejść:</strong><span>{{ trip.total_elevation_gain_m }} m</span></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><strong>Punkty GOT:</strong><span><strong>{{ trip.got_points }} pkt</strong></span></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><strong>"Everest":</strong><span>{{ trip.everest_diff_m }} m</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">Odkryte POI na Trasie</h5></div>
+                <div class="card-body">
+                    {% if discovered_pois %}
+                        <p class="card-text"><small>Poniższe punkty znajdują się w pobliżu trasy. Sprawdź, czy masz dla nich wizytę z datą tej wycieczki.</small></p>
+                        <div class="list-group">
+                            {% for item in discovered_pois %}
+                                <a href="{% url 'odznaki:poi-detail' poi_id=item.poi.id %}"
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if item.is_visited %}list-group-item-success{% endif %}">
+
+                                    {# --- POPRAWKA JEST TUTAJ --- #}
+
+                                    {# Nazwa POI jako główny element linku #}
+                                    <span class="app-link">
+                                        {{ item.poi.name }}
+                                    </span>
+
+                                    {# Status jako dodatkowa informacja po prawej stronie #}
+                                    {% if item.is_visited %}
+                                        <span class="badge bg-success" data-bs-toggle="tooltip" title="Istnieje wizyta z datą tej wycieczki">✔ Zaliczone</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Brak wizyty z datą tej wycieczki. Możesz ją dodać w Panelu Admina.">❗ Sugestia</span>
+                                    {% endif %}
+
+                                    {# --- KONIEC POPRAWKI --- #}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}<p class="text-muted mt-2">W pobliżu trasy nie znaleziono żadnych punktów POI z bazy danych.</p>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# --- NOWY BLOK JavaScript DLA TEJ STRONY --- #}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rawData = '{{ elevation_profile_data|safe }}';
+    if (!rawData) {
+        return;
+    }
+
+    const segmentsData = JSON.parse(rawData);
+
+    const colorMap = {
+        'red': 'rgba(255, 99, 132, 0.2)',
+        'blue': 'rgba(54, 162, 235, 0.2)',
+        'green': 'rgba(75, 192, 192, 0.2)',
+        'yellow': 'rgba(255, 206, 86, 0.2)',
+        'black': 'rgba(0, 0, 0, 0.2)',
+    };
+
+    const datasets = segmentsData.map(segment => {
+        const chartData = segment.data.map(point => ({ x: point[0], y: point[1] }));
+        return {
+            label: segment.label,
+            data: chartData,
+            borderColor: segment.color,
+            backgroundColor: colorMap[segment.color] || 'rgba(128, 128, 128, 0.2)',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.1
+        };
+    });
+
+    const ctx = document.getElementById('elevationProfileChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { type: 'linear', title: { display: true, text: 'Dystans (km)' } },
+                y: { title: { display: true, text: 'Wysokość (m n.p.m.)' } }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    // --- POPRAWKA JEST TUTAJ ---
+                    intersect: false,
+                    mode: 'nearest', // Zmieniamy z 'index' na 'nearest'
+                    // --- KONIEC POPRAWKI ---
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed.y !== null) {
+                                label += `Wysokość: ${context.parsed.y.toFixed(0)} m`;
+                            }
+                            return label;
+                        },
+                        title: function(context) {
+                            if (context[0] && context[0].parsed.x !== null) {
+                                return `Dystans: ${context[0].parsed.x.toFixed(2)} km`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

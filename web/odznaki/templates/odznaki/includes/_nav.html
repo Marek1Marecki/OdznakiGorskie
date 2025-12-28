@@ -1,0 +1,74 @@
+
+{% load static %}
+
+{# odznaki/templates/odznaki/includes/_nav.html #}
+{# Ten plik definiuje teraz zawartość wysuwanego panelu bocznego #}
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mainMenuOffcanvas" aria-labelledby="mainMenuLabel" style="background-color: #dee2e6;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="mainMenuLabel">Nawigacja</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'odznaki:dashboard' %}">
+                    <i class="fas fa-tachometer-alt fa-fw me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-medal fa-fw me-2"></i>Odznaki
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'odznaki:badge-list' %}">Lista (Tabela)</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:badge-kanban' %}">Tablica Kanban</a></li>
+                </ul>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'odznaki:geography-index' %}"><i class="fas fa-globe-europe fa-fw me-2"></i>Geografia</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'odznaki:trip-list' %}"><i class="fas fa-route fa-fw me-2"></i>Wycieczki</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'odznaki:poi-explorer' %}"><i class="fas fa-search-location fa-fw me-2"></i>Eksplorator POI</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'odznaki:organizer-list' %}"><i class="fas fa-sitemap fa-fw me-2"></i>Organizatorzy</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'odznaki:booklet-list' %}"><i class="fas fa-book fa-fw me-2"></i>Książeczki</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'odznaki:timeline' %}"><i class="fas fa-stream fa-fw me-2"></i>Oś Czasu</a></li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-chart-pie fa-fw me-2"></i>Analityka
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'odznaki:analytics-activity' %}">Aktywność w Regionach</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:analytics-yearly' %}">Statystyki Roczne</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:analytics-gpx-heatmap' %}">Mapa Śladów GPX</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:analytics-profile' %}">Mój Profil Zdobywcy</a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-trophy fa-fw me-2"></i>Rankingi
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'odznaki:poi-scores' %}">Ranking POI</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:mesoregion-scores' %}">Ranking Regionów</a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-tools fa-fw me-2"></i>Narzędzia
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'odznaki:tool-poi-proximity' %}">Analiza Bliskości POI</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:tool-geo-audit' %}">Audyt Geograficzny</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:tool-potential-visits' %}">Odkrywca Zaliczeń</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:tool-asset-audit' %}">Audyt Plików</a></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:tool-orphaned-pois' %}">Audyt Osieroconych POI</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'odznaki:tool-map-settings' %}">Ustawienia Map</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>

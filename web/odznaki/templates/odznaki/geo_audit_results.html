@@ -1,0 +1,65 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}Wyniki audytu geograficznego{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Wyniki audytu geograficznego</h2>
+    
+    {% if problematic_pois %}
+        <div class="alert alert-warning">
+            Znaleziono {{ problematic_pois|length }} problematycznych punktów.
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Podsumowanie błędów</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for item in problematic_pois %}
+                                <li class="list-group-item">
+                                    <h6>{{ item.poi.name }} (ID: {{ item.poi.id }})</h6>
+                                    <ul>
+                                        {% for error in item.errors %}
+                                            <li>
+                                                <strong>{{ error.level }}:</strong> {{ error.status }}
+                                                {% if error.suggestion %}
+                                                    <br><small>Sugestie: {{ error.suggestion|length }}</small>
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Mapa</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ map_html|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-success">
+            Brak problematycznych punktów. Wszystkie lokalizacje są poprawne.
+        </div>
+    {% endif %}
+    
+    <div class="mt-4">
+        <a href="{% url 'odznaki:dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Powrót do panelu głównego
+        </a>
+    </div>
+</div>
+{% endblock %}

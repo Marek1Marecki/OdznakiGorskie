@@ -1,0 +1,50 @@
+{% load odznaki_extras %}
+{% load l10n %}
+
+<div class="list-group-item">
+    <div class="d-flex w-100 align-items-center">
+
+        <div class="flex-shrink-0 me-3" style="width: 40px; height: 40px; text-align: center;">
+            {% if item.level.image %}
+                <img src="{{ item.level.image.url }}"
+                     alt="{{ item.level.get_level_display }}"
+                     class="img-fluid"
+                     style="max-height: 40px; cursor: pointer;"
+                     data-bs-toggle="modal"
+                     data-bs-target="#imageModal"
+                     data-img-src="{{ item.level.image.url }}"
+                     data-img-title="{{ item.level.badge.name }} - {{ item.level.get_level_display }}"
+                     onclick="event.stopPropagation();">
+            {% endif %}
+        </div>
+
+        <div class="flex-grow-1">
+            <a href="{% url 'odznaki:badge-detail' item.level.badge.id %}" class="app-link">
+                <h6 class="mb-1">{{ item.level.badge.name }} - {{ item.level.get_level_display }}</h6>
+            </a>
+            {% if item.percentage > 0 and item.percentage < 100 %}
+                <div class="progress mt-1"
+                     style="height: 1rem; background-color: transparent; border: 1px solid #dee2e6;"
+                     role="progressbar"
+                     aria-label="Postęp odznaki"
+                     aria-valuenow="{{ item.percentage|unlocalize|floatformat:0 }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                    <div class="progress-bar"
+                         style="width: {{ item.percentage|unlocalize }}%; {{ item.percentage|unlocalize|progress_bar_style }}">
+                        {% if item.percentage > 10 %}
+                            {{ item.percentage|floatformat:0 }}%
+                        {% endif %}
+                    </div>
+                </div>
+                <small class="text-muted">
+                    {{ item.percentage|floatformat:0 }}% ({{ item.achieved_count }} z {{ item.required_count }} pkt)
+                </small>
+            {% else %}
+                <small class="text-muted">
+                    ({{ item.achieved_count }} z {{ item.required_count }} pkt)
+                </small>
+            {% endif %}
+        </div>
+    </div>
+</div>

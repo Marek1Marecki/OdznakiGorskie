@@ -1,0 +1,167 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}Narzędzie: Analiza Bliskości POI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Analiza Bliskości POI</h1>
+            <p class="col-md-8 fs-4">
+                To narzędzie znajduje grupy punktów POI położonych blisko siebie,
+                aby ułatwić zarządzanie relacjami rodzic-dziecko i weryfikację poprawności powiązań.
+            </p>
+        </div>
+    </div>
+
+    {# --- Panel Filtrów i Sortowania --- #}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'odznaki:tool-poi-proximity' %}">
+                <div class="row g-3 align-items-end">
+
+                    <div class="col-md-4">
+                        <label for="status_filter" class="form-label fw-bold">Pokaż grupy:</label>
+                        <select name="status_filter" id="status_filter" class="form-select" onchange="this.form.submit()">
+                            <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>
+                                Wszystkie ({{ total_group_count }})
+                            </option>
+                            <option value="problems_only" {% if current_filters.status == 'problems_only' %}selected{% endif %}>
+                                Wymagające uwagi ({{ problems_group_count }})
+                            </option>
+                            <option value="ok_only" {% if current_filters.status == 'ok_only' %}selected{% endif %}>
+                                Poprawnie połączone ({{ ok_group_count }})
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="sort" class="form-label fw-bold">Sortuj według:</label>
+                        <select name="sort" id="sort" class="form-select" onchange="this.form.submit()">
+                            <option value="distance_asc" {% if current_filters.sort == 'distance_asc' %}selected{% endif %}>Odległości (rosnąco)</option>
+                            <option value="distance_desc" {% if current_filters.sort == 'distance_desc' %}selected{% endif %}>Odległości (malejąco)</option>
+                            <option value="count_desc" {% if current_filters.sort == 'count_desc' %}selected{% endif %}>Liczby obiektów (malejąco)</option>
+                            <option value="count_asc" {% if current_filters.sort == 'count_asc' %}selected{% endif %}>Liczby obiektów (rosnąco)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Zastosuj</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# --- Tabela z Rozwijanymi Wierszami --- #}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 5%;">Status</th>
+                    <th>Potencjalny Rodzic</th>
+                    <th class="text-center">Max Odległość</th>
+                    <th class="text-center">Liczba Obiektów</th>
+                    <th class="text-end">Akcje</th>
+                </tr>
+            </thead>
+            <tbody class="accordion" id="poi-group-accordion">
+                {% for group in poi_groups %}
+                    {# Główny, widoczny wiersz tabeli #}
+                    <tr>
+                        <td data-bs-toggle="collapse" data-bs-target="#group-{{ forloop.counter }}" aria-expanded="false" style="cursor: pointer;">
+                            {% if group.group_status == 'OK' %}
+                                <span class="badge bg-success">Połączone</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Połącz</span>
+                            {% endif %}
+                        </td>
+                        <td data-bs-toggle="collapse" data-bs-target="#group-{{ forloop.counter }}" aria-expanded="false" style="cursor: pointer;">
+                            <strong>{{ group.parent_candidate_name }}</strong>
+                        </td>
+                        <td class="text-center" data-bs-toggle="collapse" data-bs-target="#group-{{ forloop.counter }}" aria-expanded="false" style="cursor: pointer;">
+                            {{ group.max_distance|floatformat:0 }} m
+                        </td>
+                        <td class="text-center" data-bs-toggle="collapse" data-bs-target="#group-{{ forloop.counter }}" aria-expanded="false" style="cursor: pointer;">
+                            {{ group.poi_count }}
+                        </td>
+                        <td class="text-end">
+                             <a href="{% url 'admin:odznaki_pointofinterest_changelist' %}?id__in={{ group.pois_in_group|map_attribute:'poi.id'|join:',' }}"
+                               target="_blank" class="btn btn-secondary btn-sm">
+                               Edytuj
+                            </a>
+                        </td>
+                    </tr>
+                    {# Ukryty wiersz ze szczegółami, który się rozwinie #}
+                    <tr>
+                        <td colspan="5" class="p-0" style="border: none;">
+                            <div id="group-{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#poi-group-accordion">
+                                <div class="accordion-body bg-light">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul class="list-group list-group-flush">
+                                                {% for item in group.pois_in_group %}
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="me-2">
+                                                            {% if item.link_status == 'Rodzic' %}⭐
+                                                            {% elif item.link_status == 'Połączony' %}🔗
+                                                            {% else %}❗
+                                                            {% endif %}
+                                                            </span>
+
+                                                            {# Nazwa POI jest teraz linkiem #}
+                                                            <a href="{% url 'odznaki:poi-detail' poi_id=item.poi.id %}" class="app-link fw-bold">
+                                                                {{ item.poi.name }}
+                                                            </a>
+
+                                                            {% if item.link_status != 'Rodzic' and item.poi.parent %}
+                                                                {# Nazwa rodzica również może być linkiem #}
+                                                                <small class="text-muted">
+                                                                    (→ <a href="{% url 'odznaki:poi-detail' poi_id=item.poi.parent.id %}" class="app-link text-muted">{{ item.poi.parent.name }}</a>)
+                                                                </small>
+                                                            {% endif %}
+                                                        </div>
+
+                                                        <span class="badge
+                                                            {% if item.link_status == 'Rodzic' %}bg-primary
+                                                            {% elif item.link_status == 'Połączony' %}bg-success
+                                                            {% else %}bg-danger{% endif %}
+                                                            rounded-pill">
+                                                            {{ item.link_status }}
+                                                        </span>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div style="height: 370px; border: 1px solid #ccc;">
+                                                {# --- ZMIANA JEST TUTAJ --- #}
+                                                <iframe
+                                                    src="{% url 'odznaki:tool-proximity-map' %}?poi_ids={{ group.poi_ids_str }}"
+                                                    style="width: 100%; height: 100%; border: none;"
+                                                    loading="lazy"
+                                                    title="Mapa grupy POI">
+                                                </iframe>
+                                                {# --- KONIEC ZMIANY --- #}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <div class="alert alert-info my-3">Brak grup do wyświetlenia dla wybranych filtrów.</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

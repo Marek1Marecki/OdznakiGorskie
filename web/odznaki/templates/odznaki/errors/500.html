@@ -1,0 +1,13 @@
+{# odznaki_gorskie/templates/500.html #}
+{% extends "odznaki/base.html" %}
+
+{% block title %}Błąd serwera{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <h1 class="display-1">500</h1>
+    <p class="lead">Wystąpił nieoczekiwany błąd serwera.</p>
+    <p>Pracujemy nad jego rozwiązaniem. Prosimy spróbować ponownie za chwilę.</p>
+    <a href="{% url 'odznaki:dashboard' %}" class="btn btn-primary mt-4">Wróć na stronę główną</a>
+</div>
+{% endblock %}

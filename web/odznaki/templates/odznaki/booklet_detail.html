@@ -1,0 +1,114 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}{{ booklet.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ booklet.name }}</h1>
+    <hr class="mb-4">
+
+    {# --- NOWY, INTELIGENTNY UKŁAD WIERSZA Z INFORMACJAMI --- #}
+    <div class="row g-4 mb-4">
+
+        {# --- LEWA KOLUMNA (ZAWSZE SZEROKOŚĆ 5/12) --- #}
+        <div class="col-lg-5">
+
+            <!-- Karta z metryczką (zawsze tutaj) -->
+            <div class="card {% if booklet.image and booklet.scan %}mb-4{% else %}h-100{% endif %}">
+                <div class="card-header"><h5 class="mb-0">Metryczka</h5></div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Typ:</strong> {{ booklet.get_booklet_type_display }}</li>
+                        {% if booklet.sequence_number %}<li class="list-group-item"><strong>Numer kolejny:</strong> {{ booklet.sequence_number }}</li>{% endif %}
+                        {% if booklet.club_number %}<li class="list-group-item"><strong>Numer klubowy:</strong> {{ booklet.club_number }}</li>{% endif %}
+                        {% if booklet.organizer %}<li class="list-group-item"><strong>Organizator:</strong> <a href="{% url 'odznaki:organizer-detail' booklet.organizer.pk %}">{{ booklet.organizer.name }}</a></li>{% endif %}
+                        <li class="list-group-item"><strong>Status:</strong> {% if booklet.is_possessed %}W posiadaniu{% else %}Brak{% endif %}</li>
+                        {% if booklet.booklet_type == 'got' %}
+                            <li class="list-group-item">
+                                <strong>Okres ważności wycieczek:</strong>
+                                <div class="pt-2 ps-4">
+                                    <span><i class="fa-solid fa-calendar-check text-muted me-1"></i> <strong>Od:</strong> {{ booklet.valid_from|date:"d F Y"|default:"bez limitu" }}</span><br>
+                                    <span class="mt-1"><i class="fa-solid fa-calendar-xmark text-muted me-1"></i> <strong>Do:</strong> {{ booklet.valid_to|date:"d F Y"|default:"bez limitu" }}</span>
+                                </div>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            {# Wyświetl zdjęcie pod metryczką TYLKO wtedy, gdy mamy i zdjęcie, i skan #}
+            {% if booklet.image and booklet.scan %}
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-0">Okładka</h5></div>
+                    <div class="card-body text-center">
+                        <img src="{{ booklet.image.url }}" class="img-fluid rounded" alt="Okładka książeczki" style="cursor: pointer;"
+                             data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ booklet.image.url }}"
+                             data-img-title="Okładka: {{ booklet.name }}" loading="lazy">
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        {# --- PRAWA KOLUMNA (pojawia się tylko, jeśli są jakiekolwiek media) --- #}
+        {% if booklet.image or booklet.scan %}
+            <div class="col-lg-7">
+
+                {# Scenariusz 1: Mamy oba - pokaż tylko skan #}
+                {% if booklet.image and booklet.scan %}
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Podgląd Skanu</h5>
+                            <a href="{{ booklet.scan.url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Otwórz w nowej karcie"><i class="fa-solid fa-up-right-from-square"></i></a>
+                        </div>
+                        <div class="card-body">
+                            <div class="ratio ratio-1x1" style="min-height: 500px;">
+                                <iframe src="{{ booklet.scan.url }}" title="Podgląd skanu PDF" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                {# Scenariusz 2: Mamy tylko zdjęcie - pokaż zdjęcie #}
+                {% elif booklet.image %}
+                    <div class="card h-100">
+                        <div class="card-header"><h5 class="mb-0">Okładka</h5></div>
+                        <div class="card-body text-center d-flex justify-content-center align-items-center">
+                             <img src="{{ booklet.image.url }}" class="img-fluid rounded" alt="Okładka książeczki" style="cursor: pointer; max-height: 500px;"
+                                 data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ booklet.image.url }}"
+                                 data-img-title="Okładka: {{ booklet.name }}" loading="lazy">
+                        </div>
+                    </div>
+
+                {# Scenariusz 3: Mamy tylko skan - pokaż skan #}
+                {% elif booklet.scan %}
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Podgląd Skanu</h5>
+                            <a href="{{ booklet.scan.url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Otwórz w nowej karcie"><i class="fa-solid fa-up-right-from-square"></i></a>
+                        </div>
+                        <div class="card-body">
+                            <div class="ratio ratio-1x1" style="min-height: 500px;">
+                                <iframe src="{{ booklet.scan.url }}" title="Podgląd skanu PDF" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# --- WIERSZ 2: Lista Powiązanych Odznak (bez zmian) --- #}
+    {% if booklet.booklet_type != 'got' %}
+        <div class="row">
+            <div class="col-12">
+                <h2>Odznaki powiązane z tą książeczką</h2>
+                {% if badges_with_progress %}
+                    {% include "odznaki/includes/_badge_table_partial.html" with badges_list=badges_with_progress today=today parent_id=booklet.id %}
+                {% else %}
+                    <p class="text-muted">Brak odznak powiązanych z tą książeczką.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

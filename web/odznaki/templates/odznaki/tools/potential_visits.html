@@ -1,0 +1,94 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}Narzędzie: Odkrywca Potencjalnych Zaliczeń{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Odkrywca Potencjalnych Zaliczeń</h1>
+            <p class="col-md-8 fs-4">
+                To narzędzie analizuje historyczne trasy GPX w poszukiwaniu dowodów na to,
+                że byłem w pobliżu punktów POI wymaganych w aktywnych odznakach,
+                ale dla których nie mam jeszcze wpisu <code>Visit</code>.
+            </p>
+        </div>
+    </div>
+
+    {# Wyświetlanie komunikatów (np. o sukcesie utworzenia Visit) #}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if suggestions %}
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Znaleziono sugestie!</h4>
+            <p>Poniżej znajduje się lista {{ suggestions|length }} punktów POI, dla których istnieją pasujące trasy GPX, ale brakuje wpisu <code>Visit</code>.</p>
+        </div>
+
+        <div class="accordion" id="suggestionsAccordion">
+            {% for item in suggestions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ item.poi.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ item.poi.id }}" aria-expanded="false">
+                            <span class="badge bg-primary me-2">{{ item.potential_trips|length }}</span>
+                            <strong>{{ item.poi.name }}</strong>
+                            <small class="text-muted ms-2">- wymagany w: {{ item.badges|join:", " }}</small>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ item.poi.id }}" class="accordion-collapse collapse" data-bs-parent="#suggestionsAccordion">
+                        <div class="accordion-body">
+                            <h5>Sugerowane zaliczenia na podstawie tras:</h5>
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Data Wycieczki</th>
+                                        <th>Nazwa Wycieczki</th>
+                                        <th class="text-end">Min. odległość</th>
+                                        <th class="text-end">Akcja</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trip_data in item.potential_trips %}
+                                        <tr>
+                                            <td>{{ trip_data.trip.date|date:"Y-m-d" }}</td>
+                                            <td>
+                                                <a href="{% url 'odznaki:trip-detail' trip_data.trip.id %}" target="_blank">
+                                                    {{ trip_data.trip }}
+                                                </a>
+                                            </td>
+                                            <td class="text-end">{{ trip_data.distance }} m</td>
+                                            <td class="text-end">
+                                                <form action="{% url 'odznaki:create-visit-from-suggestion' %}" method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="poi_id" value="{{ item.poi.id }}">
+                                                    <input type="hidden" name="trip_id" value="{{ trip_data.trip.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        + Utwórz Visit
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="alert alert-success">
+            <h4 class="alert-heading">Wszystko w porządku!</h4>
+            <p class="mb-0">Audyt został zakończony. Nie znaleziono żadnych brakujących wpisów <code>Visit</code>, dla których istnieją dowody w postaci tras GPX.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

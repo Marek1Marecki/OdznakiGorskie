@@ -1,0 +1,47 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}Ustawienia Warstw Mapy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Ustawienia Warstw Mapy</h1>
+            <p class="col-md-8 fs-4">
+                Wybierz, które warstwy map mają być dostępne w przełączniku na mapach w całej aplikacji.
+                Zmiany zostaną zapisane i będą aktywne do czasu wyczyszczenia cache'u serwera.
+            </p>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="card">
+            <div class="list-group list-group-flush">
+                {% for layer in all_layers %}
+                <div class="list-group-item">
+                    <div class="form-check form-switch fs-5">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               role="switch"
+                               name="active_layers"
+                               value="{{ layer.id }}"
+                               id="layer-{{ layer.id }}"
+                               {% if layer.id in active_layer_ids %}checked{% endif %}
+                               {% if layer.is_base %}disabled{% endif %}>
+                        <label class="form-check-label" for="layer-{{ layer.id }}">
+                            {{ layer.name }}
+                            {% if layer.is_paid %}<span class="badge bg-warning text-dark ms-2">Płatna</span>{% endif %}
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">Zapisz Ustawienia</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

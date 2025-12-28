@@ -1,0 +1,194 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <h1 class="mb-4">Dashboard</h1>
+
+    {# --- SEKCJA KANBAN: Logistyka Odznak --- #}
+    {% if logistics_data.to_send or logistics_data.in_verification or logistics_data.to_be_delivered or logistics_data.to_collect %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-3">Śledzenie Logistyki Odznak</h2>
+                <div class="row">
+                    {# Kolumna 1: Do Wysłania #}
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center"><h5 class="mb-0">Do Wysłania</h5><span class="badge bg-secondary rounded-pill">{{ logistics_data.to_send|length }}</span></div>
+                            <div class="list-group list-group-flush">
+                                {% for level in logistics_data.to_send %}
+                                    <a href="{% url 'odznaki:badge-detail' level.badge.id %}" class="list-group-item list-group-item-action app-link">
+                                        {{ level.badge.name }} - {{ level.get_level_display }}
+                                    </a>
+                                {% empty %}
+                                    <div class="card-body"><p class="text-muted small">Brak odznak na tym etapie.</p></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {# Kolumna 2: W Weryfikacji #}
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center"><h5 class="mb-0">W Weryfikacji</h5><span class="badge bg-secondary rounded-pill">{{ logistics_data.in_verification|length }}</span></div>
+                            <div class="list-group list-group-flush">
+                                {% for level in logistics_data.in_verification %}
+                                    <a href="{% url 'odznaki:badge-detail' level.badge.id %}" class="list-group-item list-group-item-action app-link {% if level.is_overdue %}list-group-item-warning{% endif %}">
+                                        {{ level.badge.name }} - {{ level.get_level_display }}
+                                        {% if level.is_overdue %}<span class="badge bg-warning text-dark float-end">!</span>{% endif %}
+                                    </a>
+                                {% empty %}
+                                    <div class="card-body"><p class="text-muted small">Brak odznak na tym etapie.</p></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {# Kolumna 3: Do Otrzymania #}
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center"><h5 class="mb-0">Do Otrzymania</h5><span class="badge bg-secondary rounded-pill">{{ logistics_data.to_be_delivered|length }}</span></div>
+                            <div class="list-group list-group-flush">
+                                {% for level in logistics_data.to_be_delivered %}
+                                    <a href="{% url 'odznaki:badge-detail' level.badge.id %}" class="list-group-item list-group-item-action app-link {% if level.is_overdue %}list-group-item-danger{% endif %}">
+                                        {{ level.badge.name }} - {{ level.get_level_display }}
+                                        {% if level.is_overdue %}<span class="badge bg-danger float-end">!</span>{% endif %}
+                                    </a>
+                                {% empty %}
+                                    <div class="card-body"><p class="text-muted small">Brak odznak na tym etapie.</p></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {# Kolumna 4: Do Wpięcia #}
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center"><h5 class="mb-0">Do Wpięcia</h5><span class="badge bg-secondary rounded-pill">{{ logistics_data.to_collect|length }}</span></div>
+                            <div class="list-group list-group-flush">
+                                {% for level in logistics_data.to_collect %}
+                                    <a href="{% url 'odznaki:badge-detail' level.badge.id %}" class="list-group-item list-group-item-action app-link">
+                                        {{ level.badge.name }} - {{ level.get_level_display }}
+                                    </a>
+                                {% empty %}
+                                    <div class="card-body"><p class="text-muted small">Brak odznak na tym etapie.</p></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <hr class="mb-4">
+
+    <div class="row g-4">
+        {# --- Lewa, szersza kolumna --- #}
+        <div class="col-lg-8">
+
+            {# --- NOWA KARTA: ALARM O TERMINACH --- #}
+            {% if expiring_badges %}
+            <div class="card border-danger mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">🚨 Uwaga: Kończące się Terminy!</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for badge in expiring_badges %}
+                        <a href="{% url 'odznaki:badge-detail' badge.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="app-link fw-bold">{{ badge.name }}</span>
+                                <small class="d-block text-muted">Termin mija: {{ badge.end_date|date:"d F Y" }}</small>
+                            </div>
+                            <span class="badge
+                                {% if badge.days_left < 30 %}bg-danger
+                                {% else %}bg-warning text-dark{% endif %}
+                                rounded-pill">
+                                Zostało {{ badge.days_left }} dni
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {# --- KONIEC NOWEJ KARTY --- #}
+
+            {% if news_items %}
+            <div class="card mb-4" id="news-card">
+                <form action="{% url 'odznaki:dismiss-multiple-news-items' %}" method="post">
+                    {% csrf_token %}
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Nowości z <a href="https://odznaki.org/zmiany/" target="_blank" rel="noopener noreferrer" class="app-link">odznaki.org</a></h5>
+                        <button type="submit" class="btn btn-primary btn-sm">Ukryj Zaznaczone</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light"><tr><th scope="col">Data</th><th scope="col">Nazwa Odznaki</th><th scope="col">Typ Zmiany</th><th scope="col" class="text-center" style="width: 1%;">Ukryj</th></tr></thead>
+                            <tbody>
+                                {% for item in news_items %}
+                                    <tr>
+                                        <td>{{ item.change_date_str }}</td>
+                                        <td><a href="{{ item.source_url }}" target="_blank" class="app-link">{{ item.badge_name }}</a></td>
+                                        <td>{% if item.change_type == 'ADD' %}<span class="badge bg-success">{{ item.get_change_type_display }}</span>{% else %}<span class="badge bg-primary">{{ item.get_change_type_display }}</span>{% endif %}</td>
+                                        <td class="text-center"><input class="form-check-input" type="checkbox" name="item_ids" value="{{ item.id }}"></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">Najcenniejsze Cele (Top 10 POI)</h5></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <tbody>
+                        {% for item in top_pois %}
+                            <tr>
+                                <td><a href="{% url 'odznaki:poi-detail' poi_id=item.poi.id %}" class="app-link fw-bold">{{ item.poi.name }}</a></td>
+                                <td>
+                                    {% if item.poi.mesoregion %}
+                                    <a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=item.poi.mesoregion.pk %}" class="app-link small text-muted">{{ item.poi.mesoregion.name }}</a>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end"><span class="badge bg-primary rounded-pill">{{ item.score|floatformat:0 }} pkt</span></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if top_pois %}<div class="card-footer text-end"><a href="{% url 'odznaki:poi-scores' %}" class="app-link small">Zobacz pełny ranking POI &raquo;</a></div>{% endif %}
+            </div>
+        </div>
+
+        {# --- Prawa, węższa kolumna --- #}
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Ogólne Podsumowanie</h5></div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">Odznaki w trakcie<span class="badge bg-primary rounded-pill">{{ general_stats.in_progress_badges }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">Odznaki zdobyte<span class="badge bg-success rounded-pill">{{ general_stats.achieved_badges }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">Wszystkie odznaki<span class="badge bg-dark rounded-pill">{{ general_stats.total_badges }}</span></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">Odwiedzone POI<span class="badge bg-info rounded-pill">{{ general_stats.visited_pois }} / {{ general_stats.total_pois }}</span></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">Najgorętsze Regiony (Top 5)</h5></div>
+                {% if top_regions %}
+                    <div class="list-group list-group-flush">
+                        {% for region in top_regions %}
+                            <a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=region.top_pois.0.poi.mesoregion.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <span class="app-link">{{ region.mesoregion_name }}</span>
+                                <span class="badge bg-primary rounded-pill">{{ region.total_score|floatformat:0 }} pkt</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <div class="card-footer text-end"><a href="{% url 'odznaki:mesoregion-scores' %}" class="app-link small">Zobacz pełny ranking regionów &raquo;</a></div>
+                {% else %}<div class="card-body"><p class="text-muted">Brak danych do rankingu.</p></div>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

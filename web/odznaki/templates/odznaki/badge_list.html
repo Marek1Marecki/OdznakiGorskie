@@ -1,0 +1,100 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}Lista Odznak{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Lista Odznak</h1>
+
+    {# --- Panel Filtrów i Sortowania --- #}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'odznaki:badge-list' %}" id="badge-filter-form">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-3 col-md-6">
+                        <label for="search" class="form-label">Szukaj po nazwie</label>
+                        <input type="text" name="search" id="search" class="form-control" value="{{ current_filters.search|default:'' }}">
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>Wszystkie</option>
+                            <option value="not_started" {% if current_filters.status == 'not_started' %}selected{% endif %}>Nierozpoczęte</option>
+                            <option value="in_progress" {% if current_filters.status == 'in_progress' %}selected{% endif %}>W trakcie</option>
+                            <option value="achieved" {% if current_filters.status == 'achieved' %}selected{% endif %}>Zdobyte</option>
+                            <option value="archival" {% if current_filters.status == 'archival' %}selected{% endif %}>Archiwalne</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="organizer" class="form-label">Organizator</label>
+                        <select name="organizer" id="organizer" class="form-select">
+                            <option value="all" {% if current_filters.organizer == 'all' %}selected="selected"{% endif %}>Wszyscy</option>
+                            {% for org in all_organizers %}
+                                <option value="{{ org.id }}" {% if current_filters.organizer|stringformat:"s" == org.id|stringformat:"s" %}selected="selected"{% endif %}>{{ org.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="mesoregion" class="form-label">Mezoregion</label>
+                        <select name="mesoregion" id="mesoregion" class="form-select">
+                            <option value="all" {% if current_filters.mesoregion == 'all' %}selected="selected"{% endif %}>Wszystkie</option>
+                            {% for region in all_mesoregions %}
+                                <option value="{{ region.id }}" {% if current_filters.mesoregion|stringformat:"s" == region.id|stringformat:"s" %}selected="selected"{% endif %}>{{ region.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="sort" class="form-label">Sortuj</label>
+                        <select name="sort" id="sort" class="form-select">
+                            <option value="name_asc" {% if current_filters.sort == 'name_asc' %}selected{% endif %}>Nazwa (A-Z)</option>
+                            <option value="name_desc" {% if current_filters.sort == 'name_desc' %}selected{% endif %}>Nazwa (Z-A)</option>
+                            <option value="organizer_asc" {% if current_filters.sort == 'organizer_asc' %}selected{% endif %}>Organizator (A-Z)</option>
+                            <option value="organizer_desc" {% if current_filters.sort == 'organizer_desc' %}selected{% endif %}>Organizator (Z-A)</option>
+                            <option value="progress_desc" {% if current_filters.sort == 'progress_desc' %}selected{% endif %}>Postęp (malejąco)</option>
+                            <option value="progress_asc" {% if current_filters.sort == 'progress_asc' %}selected{% endif %}>Postęp (rosnąco)</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-12 text-lg-end">
+                        <div class="d-grid d-lg-flex gap-2 justify-content-end">
+                             <a href="#" id="export-csv-btn" class="btn btn-outline-success">
+                                 <i class="fas fa-file-csv"></i> CSV
+                             </a>
+                             <button type="submit" class="btn btn-primary">Filtruj</button>
+                             {% if active_filters %}
+                                <a href="{% url 'odznaki:badge-list' %}" class="btn btn-secondary">Resetuj</a>
+                             {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# --- NOWA SEKCJA Z PIGUŁKAMI AKTYWNYCH FILTRÓW --- #}
+    {% if active_filters %}
+    <div class="mb-3 d-flex align-items-center flex-wrap gap-2">
+        <span class="me-2"><small class="text-muted">Aktywne filtry:</small></span>
+        {% for filter in active_filters %}
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary fw-normal">
+                <span class="opacity-75">{{ filter.label }}:</span> <strong>{{ filter.value }}</strong>
+                {# Link do usunięcia tego konkretnego filtra #}
+                <a href="{{ request.path }}?{{ request.GET|urlencode_without:filter.type }}" class="text-primary ms-1 text-decoration-none fw-bold" title="Usuń ten filtr">×</a>
+            </span>
+        {% endfor %}
+        <a href="{% url 'odznaki:badge-list' %}" class="ms-2 app-link small text-danger">Wyczyść wszystko</a>
+    </div>
+    {% endif %}
+    {# --- KONIEC NOWEJ SEKCJI --- #}
+
+    {# --- Tabela z Odznakami --- #}
+    {% include "odznaki/includes/_badge_table_partial.html" with badges_list=badges_list today=current_filters.today %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/odznaki/csv_export_button.js' %}"></script>
+<script src="{% static 'js/odznaki/badge_list_sorting.js' %}"></script>
+{% endblock %}

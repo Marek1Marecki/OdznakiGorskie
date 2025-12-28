@@ -1,0 +1,47 @@
+{% extends "odznaki/base.html" %}
+{% load static %}
+
+{% block title %}Ranking Aktywności w Regionach{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Ranking Aktywności w Mezoregionach</h1>
+    <p class="lead">Podsumowanie Twojej aktywności (dystans, przewyższenia, punkty GOT) w poszczególnych mezoregionach.</p>
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover" id="activityTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mezoregion</th>
+                        <th class="text-end">Całkowity Dystans</th>
+                        <th class="text-end">Suma Podejść</th>
+                        <th class="text-end">Suma Punktów GOT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in activity_ranking %}
+                    <tr>
+                        <td><a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=item.mesoregion.pk %}" class="app-link fw-bold">{{ item.mesoregion.name }}</a></td>
+                        <td class="text-end">{{ item.total_distance_km|floatformat:2 }} km</td>
+                        <td class="text-end">{{ item.total_elevation_gain_m }} m</td>
+                        <td class="text-end">{{ item.total_got_points }} pkt</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#activityTable').DataTable({
+            "language": { "url": "{% static 'datatables/i18n/pl.json' %}" },
+            "pageLength": 25,
+            "order": [[ 1, "desc" ]] // Domyślnie sortuj po dystansie, malejąco
+        });
+    });
+</script>
+{% endblock %}

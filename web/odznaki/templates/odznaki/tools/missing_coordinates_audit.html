@@ -1,0 +1,58 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}Narzędzie: Audyt Brakujących Współrzędnych{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Audyt Brakujących Współrzędnych</h1>
+            <p class="col-md-8 fs-4">
+                Poniższa lista zawiera wszystkie punkty POI w bazie danych, które nie mają
+                zdefiniowanej lokalizacji (współrzędnych). Brak tych danych może powodować
+                błędy przy próbie wyświetlenia mapy.
+            </p>
+        </div>
+    </div>
+
+    {% if problematic_pois %}
+        <div class="alert alert-warning">
+            Znaleziono <strong>{{ problematic_pois|length }}</strong> punktów POI bez współrzędnych.
+        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nazwa Punktu POI</th>
+                            <th class="text-end">Akcja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for poi in problematic_pois %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'odznaki:poi-detail' poi_id=poi.id %}" class="app-link fw-bold" target="_blank">
+                                    {{ poi.name }}
+                                </a>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'admin:odznaki_pointofinterest_change' poi.id %}" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="fas fa-edit me-2"></i>Edytuj w Panelu Admina
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-success">
+            <h4 class="alert-heading">Wszystko w porządku!</h4>
+            <p class="mb-0">Audyt został zakończony. Wszystkie punkty POI w bazie danych mają zdefiniowane współrzędne.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

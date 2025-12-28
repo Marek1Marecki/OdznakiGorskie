@@ -1,0 +1,136 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}Dziennik Wycieczek{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Dziennik Wycieczek</h1>
+
+    {# --- Panel Filtrów i Sortowania --- #}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'odznaki:trip-list' %}" id="filter-form">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Szukaj w trasie/opisie</label>
+                        <input type="text" name="search" id="search" class="form-control" value="{{ current_filters.search }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="year" class="form-label">Rok</label>
+                        <select name="year" id="year" class="form-select">
+                            <option value="all">Wszystkie</option>
+                            {% for year_date in available_years %}
+                                <option value="{{ year_date.year }}" {% if current_filters.year == year_date.year %}selected{% endif %}>
+                                    {{ year_date.year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# --- NOWY FILTR: MEZOREGION --- #}
+                    <div class="col-md-3">
+                        <label for="mesoregion" class="form-label">Mezoregion</label>
+                        <select name="mesoregion" id="mesoregion" class="form-select">
+                            <option value="all">Wszystkie</option>
+                            {# Nowa wersja, która iteruje po krotkach (id, name) #}
+                            {% for region_id, region_name in available_mesoregions %}
+                                <option value="{{ region_id }}" {% if current_filters.mesoregion == region_id %}selected{% endif %}>
+                                    {{ region_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="sort" class="form-label">Sortuj</label>
+                        <select name="sort" id="sort" class="form-select">
+                            <option value="date_desc" {% if current_filters.sort == 'date_desc' %}selected{% endif %}>Data (od najnowszych)</option>
+                            <option value="date_asc" {% if current_filters.sort == 'date_asc' %}selected{% endif %}>Data (od najstarszych)</option>
+                            <option value="distance_desc" {% if current_filters.sort == 'distance_desc' %}selected{% endif %}>Dystans (od najdłuższych)</option>
+                            <option value="distance_asc" {% if current_filters.sort == 'distance_asc' %}selected{% endif %}>Dystans (od najkrótszych)</option>
+                            <option value="got_desc" {% if current_filters.sort == 'got_desc' %}selected{% endif %}>Punkty GOT (od największej)</option>
+                            <option value="got_asc" {% if current_filters.sort == 'got_asc' %}selected{% endif %}>Punkty GOT (od najmniejszej)</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-12 text-lg-end">
+                        <div class="d-grid d-lg-flex gap-2">
+                             {# --- ZMIANA: Dodajemy id="export-csv-btn" --- #}
+                            <a href="#" id="export-csv-btn" class="btn btn-outline-success">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </a>
+                            <button type="submit" class="btn btn-primary">Filtruj</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# --- NOWA SEKCJA Z PIGUŁKAMI AKTYWNYCH FILTRÓW --- #}
+    {% if active_filters %}
+    <div class="mb-3 d-flex align-items-center flex-wrap gap-2">
+        <span class="me-2"><small class="text-muted">Aktywne filtry:</small></span>
+        {% for filter in active_filters %}
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary fw-normal">
+                <span class="opacity-75">{{ filter.label }}:</span> <strong>{{ filter.value }}</strong>
+                <a href="{{ request.path }}?{{ request.GET|urlencode_without:filter.type }}" class="text-primary ms-1 text-decoration-none fw-bold" title="Usuń ten filtr">×</a>
+            </span>
+        {% endfor %}
+        <a href="{% url 'odznaki:trip-list' %}" class="ms-2 app-link small text-danger">Wyczyść wszystko</a>
+    </div>
+    {% endif %}
+    {# --- KONIEC NOWEJ SEKCJI --- #}
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Trasa</th>
+                            <th>Mezoregiony na Trasie</th>
+                            <th class="text-end">Dystans</th>
+                            <th class="text-end">Przewyższenie</th>
+                            <th class="text-end">Pkt GOT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in trips_list_with_context %}
+                            <tr>
+                                <td>{{ item.trip.date|date:"Y-m-d" }}</td>
+                                <td><a href="{% url 'odznaki:trip-detail' trip_id=item.trip.id %}" class="app-link fw-bold">{{ item.trip }}</a></td>
+                                <td>
+                                    {# --- NOWA KOMÓRKA Z LISTĄ REGIONÓW --- #}
+                                    <small>
+                                    {% for region in item.mesoregions %}
+                                        <a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=region.pk %}" class="app-link text-muted">{{ region.name }}</a>{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                    </small>
+                                </td>
+                                <td class="text-end">{{ item.trip.total_distance_km }} km</td>
+                                <td class="text-end">{{ item.trip.total_elevation_gain_m }} m</td>
+                                <td class="text-end"><strong>{{ item.trip.got_points }}</strong></td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center p-4">{# Zmieniamy colspan na 6 #}
+                                    <p class="my-3">Brak wycieczek spełniających wybrane kryteria.</p>
+                                    <a href="/admin/odznaki/trip/add/" class="btn btn-primary">Dodaj pierwszą wycieczkę</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# --- NOWY, CZYSTY BLOK `extra_js` --- #}
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/odznaki/csv_export_button.js' %}"></script>
+{% endblock %}

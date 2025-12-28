@@ -1,0 +1,107 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}Eksplorator Geograficzny{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Eksplorator Geograficzny</h1>
+    <p class="lead">Wybierz jednostkę geograficzną, aby rozpocząć przeglądanie hierarchii i statystyk.</p>
+
+    <div class="card">
+        <!-- Nagłówki zakładek -->
+        <ul class="nav nav-tabs" id="geoIndexTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="countries-tab" data-bs-toggle="tab" data-bs-target="#countries-tab-pane" type="button">
+                    <i class="fas fa-globe-europe me-2"></i>Kraje
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="voivodeships-tab" data-bs-toggle="tab" data-bs-target="#voivodeships-tab-pane" type="button">
+                    <i class="fas fa-map-marked-alt me-2"></i>Województwa
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ranges-tab" data-bs-toggle="tab" data-bs-target="#ranges-tab-pane" type="button">
+                    <i class="fas fa-mountain me-2"></i>Łańcuchy Górskie
+                </button>
+            </li>
+        </ul>
+
+        <!-- Zawartość zakładek -->
+        <div class="tab-content" id="geoIndexTabsContent">
+
+            <!-- Zakładka 1: Kraje -->
+            <div class="tab-pane fade show active p-3" id="countries-tab-pane" role="tabpanel">
+                <div class="row">
+                    {% for country in countries %}
+                        <div class="col-12 col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ country.name }} {% if country.code %}<small class="text-muted">({{ country.code }})</small>{% endif %}</h5>
+                                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-secondary">{{ country.poi_count }} POI</span>
+                                        <a href="{% url 'odznaki:geography-region-detail' model_name='country' pk=country.pk %}" class="btn btn-sm btn-outline-primary">
+                                            Eksploruj &raquo;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12"><p class="text-muted p-3">Brak zdefiniowanych krajów w bazie danych.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Zakładka 2: Województwa -->
+            <div class="tab-pane fade p-3" id="voivodeships-tab-pane" role="tabpanel">
+                <div class="row">
+                    {% for voivodeship in voivodeships %}
+                        <div class="col-12 col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ voivodeship.name }}</h5>
+                                    <p class="card-subtitle mb-2 text-muted">{{ voivodeship.country.name }}</p>
+                                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-secondary">{{ voivodeship.poi_count }} POI</span>
+                                        <a href="{% url 'odznaki:geography-region-detail' model_name='voivodeship' pk=voivodeship.pk %}" class="btn btn-sm btn-outline-primary">
+                                            Eksploruj &raquo;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12"><p class="text-muted p-3">Brak zdefiniowanych województw w bazie danych.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Zakładka 3: Łańcuchy Górskie -->
+            <div class="tab-pane fade p-3" id="ranges-tab-pane" role="tabpanel">
+                <div class="row">
+                    {% for range in mountain_ranges %}
+                        <div class="col-12 col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ range.name }}</h5>
+                                    <p class="card-text text-muted small">{{ range.description|truncatewords:20 }}</p>
+                                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-secondary">{{ range.poi_count }} POI</span>
+                                        <a href="{% url 'odznaki:mountain-range-detail' range_slug=range.slug %}" class="btn btn-sm btn-outline-primary">
+                                            Eksploruj &raquo;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12"><p class="text-muted p-3">Brak zdefiniowanych łańcuchów górskich.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

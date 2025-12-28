@@ -1,0 +1,38 @@
+body {
+    background-color: #e9ecef; /* To jest standardowy, jasnoszary kolor Bootstrapa (`bg-light`) */
+}
+
+/* --- USTAWIENIE NIESTANDARDOWEJ SZEROKOŚCI DLA PANELU BOCZNEGO --- */
+.offcanvas.offcanvas-start,
+.offcanvas.offcanvas-end {
+    --bs-offcanvas-width: 250px;
+}
+
+.app-link {
+        color: var(--bs-link-color);
+        text-underline-offset: 0.125em;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        transition: text-decoration-color 0.15s ease-in-out, opacity 0.15s ease-in-out;
+    }
+    .app-link:hover {
+        text-decoration-color: currentColor;
+        opacity: 0.8;
+    }
+    .app-link.fw-bold { font-weight: bold !important; }
+    .app-link.link-success { color: var(--bs-success); }
+    .app-link.link-success:hover { color: var(--bs-success-dark); }
+    .app-link.small { font-size: 0.875em; }
+    .app-link.link-danger { color: var(--bs-danger); }
+    .app-link.link-danger:hover { color: var(--bs-danger-dark); }
+
+    #page-loader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(2px);
+        z-index: 1060;
+        display: none; justify-content: center; align-items: center;
+        opacity: 0; transition: opacity 0.3s ease;
+    }
+    #page-loader.show { display: flex; opacity: 1; }
+    .spinner-border { width: 3.5rem; height: 3.5rem; }
