@@ -1,0 +1,129 @@
+{% extends "odznaki/base.html" %}
+{% load static %}
+{% load odznaki_extras %}
+
+{% block title %}Eksplorator Punktów Turystycznych{% endblock %}
+
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Eksplorator Punktów Turystycznych</h1>
+
+    {# --- Panel Filtrów --- #}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtry</h5>
+        </div>
+        <div class="card-body">
+            <form id="poi-explorer-form">
+                <div class="row g-3">
+
+                    {# --- FILTRY GEOGRAFICZNE --- #}
+                    <div class="col-12">
+                        <label class="form-label">Region (opcjonalnie)</label>
+                        <div class="row g-2" id="region-filters-container">
+                            <div class="col-md"><select id="filter-country" data-region-type="country" class="form-select region-select"><option value="">Wybierz Kraj...</option>{% for country in available_countries %}<option value="{{ country.id }}">{{ country.name }}</option>{% endfor %}</select></div>
+                            <div class="col-md"><select id="filter-province" data-region-type="province" class="form-select region-select" disabled><option value="">Wybierz Prowincję...</option></select></div>
+                            <div class="col-md"><select id="filter-subprovince" data-region-type="subprovince" class="form-select region-select" disabled><option value="">Wybierz Podprowincję...</option></select></div>
+                            <div class="col-md"><select id="filter-macroregion" data-region-type="macroregion" class="form-select region-select" disabled><option value="">Wybierz Makroregion...</option></select></div>
+                            <div class="col-md"><select id="filter-mesoregion" data-region-type="mesoregion" class="form-select region-select" disabled><option value="">Wybierz Mezoregion...</option></select></div>
+                        </div>
+                        <input type="hidden" id="final-region-filter" name="region">
+                    </div>
+
+                    {# --- Filtr: Nazwa --- #}
+                    <div class="col-lg-3 col-md-6">
+                        <label for="filter-name" class="form-label">Nazwa punktu</label>
+                        <input type="text" id="filter-name" name="name" class="form-control" placeholder="np. Skrzyczne...">
+                    </div>
+
+                    {# --- Filtr : Kategoria --- #}
+                    <div class="col-lg-3 col-md-6">
+                        <label for="filter-category" class="form-label">Kategoria</label>
+                        <select id="filter-category" name="category" class="form-select">
+                            <option value="" selected>Wszystkie</option>
+                            {% for value, label in available_categories %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# --- FILTR: Status --- #}
+                    <div class="col-lg-3 col-md-6">
+                        <label for="filter-status" class="form-label">Status</label>
+                        <select id="filter-status" name="status" class="form-select">
+                            <option value="" selected>Wszystkie</option>
+                            <option value="zdobyty">Zdobyte</option>
+                            <option value="do_ponowienia">Do ponowienia</option>
+                            <option value="niezdobyty">Do zdobycia</option>
+                            <option value="nieaktywny">Nieaktywne</option>
+                        </select>
+                    </div>
+
+                    {# --- FILTR: Wysokość --- #}
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label">Wysokość (m n.p.m.)</label>
+                        <div class="input-group">
+                            <input type="number" id="filter-height-from" name="height_from" class="form-control" placeholder="Od">
+                            <input type="number" id="filter-height-to" name="height_to" class="form-control" placeholder="Do">
+                        </div>
+                    </div>
+
+                </div>
+
+                {# --- Wiersz z pigułkami i przyciskami --- #}
+                <hr class="my-4">
+                <div class="row align-items-center">
+
+                    {# LEWA STRONA: Kontener na pigułki #}
+                    <div class="col-md-8">
+                        <div id="active-filters-container" class="d-flex align-items-center flex-wrap gap-2" style="min-height: 38px;">
+                            {# JS będzie tutaj dynamicznie wstawiał pigułki LUB tekst "Brak filtrów" #}
+                        </div>
+                    </div>
+
+                    {# PRAWA STRONA: Przyciski, ZAWSZE wyrównane do prawej #}
+                    <div class="col-md-4 text-end">
+                        <a href="#" id="export-csv-btn" class="btn btn-outline-success">
+                            <i class="fas fa-file-csv me-2"></i>Eksportuj do CSV
+                        </a>
+                        <button type="button" class="btn btn-secondary" id="reset-filters-btn">Resetuj</button>
+                        <button type="submit" class="btn btn-primary">Szukaj</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    {# --- Tabela Wyników --- #}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="poiExplorerTable" style="width:100%">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nazwa POI</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end">Wysokość</th>
+                            <th>Kategoria</th>
+                            <th>Mezoregion</th>
+                            <th>Województwo</th>
+                            <th class="text-center">Data Ost. Wizyty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# DataTables wypełni tę sekcję przez AJAX #}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/odznaki/poi_explorer.js' %}"></script>
+{% endblock %}

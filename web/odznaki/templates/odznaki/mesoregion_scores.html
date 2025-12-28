@@ -1,0 +1,38 @@
+{% extends "odznaki/base.html" %}
+{% load static %}
+
+{% block title %}Ranking Regionów{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Ranking Regionów</h1>
+    <p class="lead">Poniższa lista pokazuje, które regiony oferują największy potencjał punktowy do zdobycia nowych odznak.</p>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="regionRankingTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Mezoregion</th>
+                            <th scope="col" class="text-center">Wartość Punktowa</th>
+                            <th scope="col" class="text-center">Liczba POI</th>
+                            <th scope="col">Najcenniejsze Cele</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# --- Tabela będzie wypełniana dynamicznie przez DataTables --- #}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/odznaki/mesoregion_scores.js' %}"></script>
+{% endblock %}

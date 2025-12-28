@@ -1,0 +1,213 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}Narzędzie: Audyt Osieroconych POI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    {# --- Nagłówek i opis narzędzia --- #}
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Audyt Osieroconych Punktów POI</h1>
+            <p class="col-md-8 fs-4">
+                To narzędzie znajduje punkty POI, które nie są przypisane do żadnej odznaki,
+                i sugeruje potencjalne przypisania na podstawie analizy sąsiednich ID
+                oraz daty utworzenia.
+            </p>
+        </div>
+    </div>
+
+    {# --- NOWA KARTA Z AUDYTEM LICZBY POI --- #}
+    {% if badge_discrepancies %}
+        <div class="card border-warning mb-5">
+            <div class="card-header bg-warning-subtle">
+                <h5 class="mb-0">⚠️ Audyt Liczby POI w Odznakach</h5>
+            </div>
+            <div class="card-body">
+                <p>Poniższe odznaki mają niezgodność między zadeklarowaną "Ilością obiektów do wyboru" a rzeczywistą liczbą punktów POI przypisanych w bazie danych.</p>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nazwa Odznaki</th>
+                                <th class="text-center">Zadeklarowano</th>
+                                <th class="text-center">Rzeczywiście jest</th>
+                                <th class="text-center">Różnica</th>
+                                <th class="text-end">Akcja</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for badge in badge_discrepancies %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'odznaki:badge-detail' badge.id %}" class="app-link fw-bold" target="_blank">
+                                        {{ badge.name }}
+                                    </a>
+                                </td>
+                                <td class="text-center">{{ badge.total_poi_count }}</td>
+                                <td class="text-center">{{ badge.actual_poi_count }}</td>
+                                <td class="text-center fw-bold {% if badge.actual_poi_count|sub:badge.total_poi_count > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {% with diff=badge.actual_poi_count|sub:badge.total_poi_count %}
+                                        {% if diff > 0 %}+{% endif %}{{ diff }}
+                                    {% endwith %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'admin:odznaki_badge_change' badge.id %}" class="btn btn-sm btn-secondary" target="_blank">
+                                        Edytuj
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-success mb-5">
+            <h5 class="alert-heading">✔️ Audyt Liczby POI w Odznakach</h5>
+            <p class="mb-0">Wszystkie odznaki mają spójną liczbę przypisanych punktów POI.</p>
+        </div>
+    {% endif %}
+    {# --- KONIEC NOWEJ KARTY --- #}
+
+    {# --- Główny blok z wynikami --- #}
+    {% if orphaned_poi_data %}
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Znaleziono sugestie!</h4>
+            <p>Poniżej znajduje się lista <strong>{{ total_orphans_count }}</strong> "osieroconych" punktów POI, dla których znaleziono kontekstowe podpowiedzi.</p>
+        </div>
+
+        <div class="accordion" id="orphansAccordion">
+            {% for item in orphaned_poi_data %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ item.orphan_poi.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ item.orphan_poi.id }}">
+                            <span class="badge bg-warning text-dark me-2">!</span>
+                            <strong>{{ item.orphan_poi.name }}</strong>
+                            <small class="text-muted ms-2">(ID: {{ item.orphan_poi.id }})</small>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ item.orphan_poi.id }}" class="accordion-collapse collapse" data-bs-parent="#orphansAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                {# --- Kolumna 1: Sugestie na podstawie ID --- #}
+                                <div class="col-lg-6">
+                                    <h5>Sugestie na podstawie sąsiednich ID:</h5>
+                                    {% if item.id_suggestions %}
+                                        <ul class="list-group">
+                                            {% for suggestion in item.id_suggestions %}
+                                                <li class="list-group-item">
+                                                    Punkt
+                                                    <a href="{% url 'odznaki:poi-detail' poi_id=suggestion.neighbor_poi.id %}" class="app-link fw-bold" target="_blank">
+                                                        {{ suggestion.neighbor_poi.name }} ({{ suggestion.neighbor_poi.id }})
+                                                    </a>
+                                                    należy do:
+                                                    <div class="mt-1">
+                                                    {% for badge in suggestion.badges %}
+                                                        <a href="{% url 'odznaki:badge-detail' badge.id %}" class="badge bg-primary text-decoration-none" target="_blank">
+                                                            {{ badge.name }}
+                                                        </a>
+                                                    {% endfor %}
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="text-muted">Brak sugestii.</p>
+                                    {% endif %}
+                                </div>
+
+                                {# --- Kolumna 2: Sugestie na podstawie daty --- #}
+                                <div class="col-lg-6 mt-4 mt-lg-0">
+                                    <h5>Sugestie na podstawie daty dodania:</h5>
+                                    {% if item.temporal_suggestions %}
+                                        <ul class="list-group">
+                                            {% for suggestion in item.temporal_suggestions %}
+                                                <li class="list-group-item">
+                                                    Punkt
+                                                    <a href="{% url 'odznaki:poi-detail' poi_id=suggestion.neighbor_poi.id %}" class="app-link fw-bold" target="_blank">
+                                                        {{ suggestion.neighbor_poi.name }}
+                                                    </a>
+                                                    (dodany {{ suggestion.neighbor_poi.created_at|timesince }} temu)
+                                                    należy do:
+                                                    <div class="mt-1">
+                                                    {% for badge in suggestion.badges %}
+                                                        <a href="{% url 'odznaki:badge-detail' badge.id %}" class="badge bg-secondary text-decoration-none" target="_blank">
+                                                            {{ badge.name }}
+                                                        </a>
+                                                    {% endfor %}
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="text-muted">Brak sugestii.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {# --- Sekcja Akcji --- #}
+                            <hr class="my-4">
+                            <h5>Sugerowane Akcje Naprawcze:</h5>
+
+                            {# Sprawdzamy, czy mamy jakieś sugestie #}
+                            {% if item.most_common_badges %}
+                                {% for badge, count in item.most_common_badges %}
+                                    {# Sprawdzamy, czy dana sugestia jest "silna" (pojawiła się więcej niż raz) #}
+                                    {% if count > 1 or forloop.first %}
+                                        <div class="d-flex align-items-center mb-2">
+                                            {# Link, który pre-wypełnia zarówno POI, jak i ODZNAKĘ #}
+                                            <a href="{% url 'admin:odznaki_badgerequirement_add' %}?point_of_interest={{ item.orphan_poi.id }}&badge={{ badge.id }}"
+                                               target="_blank"
+                                               class="btn btn-success me-3">
+                                                + Przypisz do "{{ badge.name }}"
+                                            </a>
+                                            <span class="text-muted">
+                                                Sugerowane <strong>{{ count }}</strong> raz(y) przez sąsiadów.
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+
+                            {# Link ogólny, który pre-wypełnia tylko POI #}
+                            <div class="d-flex align-items-center mb-2 mt-3">
+                                <a href="{% url 'admin:odznaki_badgerequirement_add' %}?point_of_interest={{ item.orphan_poi.id }}"
+                                   target="_blank"
+                                   class="btn btn-secondary me-3">
+                                    + Utwórz nowe powiązanie (wybierz odznakę ręcznie)
+                                </a>
+                                <span class="text-muted">
+                                    Otwiera formularz z wybranym tym POI.
+                                </span>
+                            </div>
+
+                            {# Link do edycji samego POI (jako opcja awaryjna) #}
+                            <div class="d-flex align-items-center mb-2 mt-3">
+                                <a href="{% url 'admin:odznaki_pointofinterest_change' item.orphan_poi.id %}"
+                                   target="_blank"
+                                   class="btn btn-outline-secondary me-3">
+                                    Edytuj ten POI
+                                </a>
+                                <span class="text-muted">
+                                    Jeśli chcesz zmienić jego nazwę, lokalizację itp.
+                                </span>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="alert alert-success">
+            <h4 class="alert-heading">Wszystko w porządku!</h4>
+            <p class="mb-0">Audyt został zakończony. Nie znaleziono żadnych "osieroconych" punktów POI w bazie danych.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

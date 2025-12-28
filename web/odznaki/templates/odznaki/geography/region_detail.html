@@ -1,0 +1,165 @@
+{% extends 'odznaki/base.html' %}
+{% load static %}
+{% load odznaki_extras %}
+
+{% block title %}{{ region.name }} - Geografia{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% for crumb in breadcrumbs %}
+                {% if crumb.url and not forloop.last %}
+                    <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+
+    <!-- Nagłówek regionu -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>{{ region.name }}</h1>
+            <p class="lead text-muted">{{ region_type_display }}</p>
+        </div>
+    </div>
+
+    <!-- Panel statystyk -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">📊 Statystyki POI</h5></div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2 col-6 mb-3"><div class="h4 mb-1">{{ stats.total }}</div><div class="text-muted">Łącznie POI</div></div>
+                        <div class="col-md-2 col-6 mb-3"><div class="h4 mb-1 text-success">{{ stats.zdobyty }}</div><div class="text-muted">🟢 Zdobyte</div></div>
+                        <div class="col-md-2 col-6 mb-3"><div class="h4 mb-1 text-primary">{{ stats.do_ponowienia }}</div><div class="text-muted">🔵 Do ponowienia</div></div>
+                        <div class="col-md-2 col-6 mb-3"><div class="h4 mb-1 text-danger">{{ stats.niezdobyty }}</div><div class="text-muted">🔴 Do zdobycia</div></div>
+                        <div class="col-md-2 col-6 mb-3"><div class="h4 mb-1 text-secondary">{{ stats.nieaktywny }}</div><div class="text-muted">⚪ Nieaktywne</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Regiony nadrzędne -->
+    {% if parent_regions %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-0">🏛️ Regiony nadrzędne</h5></div>
+                    <div class="card-body">
+                        {% for parent_crumb in parent_regions %}{% if parent_crumb.name != 'Geografia' %}
+                            <a href="{{ parent_crumb.url }}" class="btn btn-outline-secondary btn-sm me-2 mb-2">↑ {{ parent_crumb.name }} <span class="text-muted">({{ parent_crumb.type_display }})</span></a>
+                        {% endif %}{% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Podregiony -->
+    {% if subregions %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-0">🗺️ Podregiony</h5></div>
+                    <div class="card-body"><div class="row">
+                        {% for subregion in subregions %}
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3"><div class="card h-100"><div class="card-body d-flex flex-column p-3">
+                                <h6 class="card-title mb-2">{{ subregion.object.name }}</h6>
+                                <div class="row align-items-center mt-auto"><div class="col">
+                                    <span class="text-muted small">{{ subregion.poi_count }} POI</span>
+                                </div><div class="col-auto">
+                                    <a href="{{ subregion.url }}" class="btn btn-sm btn-outline-primary">Przejdź</a>
+                                </div></div>
+                            </div></div></div>
+                        {% endfor %}
+                    </div></div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Zakładki -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <ul class="nav nav-tabs" id="regionTabs" role="tablist">
+                    <li class="nav-item" role="presentation"><button class="nav-link active" id="map-tab" data-bs-toggle="tab" data-bs-target="#map-tab-pane" type="button"><i class="fas fa-map-marked-alt me-2"></i>Mapa</button></li>
+                    {% if region.link %}<li class="nav-item" role="presentation"><button class="nav-link" id="wikipedia-tab" data-bs-toggle="tab" data-bs-target="#wikipedia-tab-pane" type="button"><i class="fa-brands fa-wikipedia-w me-2"></i>Wikipedia</button></li>{% endif %}
+                    <li class="nav-item" role="presentation"><button class="nav-link" id="poi-tab" data-bs-toggle="tab" data-bs-target="#poi-tab-pane" type="button"><i class="fas fa-mountain me-2"></i>Punkty POI ({{ stats.total }})</button></li>
+                </ul>
+                <div class="tab-content" id="regionTabsContent">
+
+                    <!-- ZAKŁADKA Z MAPĄ - WERSJA FINAŁOWA Z UPROSZCZONYMI PRZYCISKAMI -->
+                    <div class="tab-pane fade show active p-3" id="map-tab-pane" role="tabpanel">
+                        {% if show_map %}
+                            {# --- WIDOK, GDY MAPA JEST WŁĄCZONA --- #}
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="me-3 fw-bold align-self-center">Dodaj do mapy:</span>
+
+                                {# Przycisk "Pokaż POI" - widoczny tylko, gdy POI nie są jeszcze pokazane #}
+                                {% if not show_pois %}
+                                    <a href="?show_map=1&show_pois=1&show_neighbors={{ show_neighbors|yesno:'1,0' }}" class="btn btn-sm btn-outline-primary map-control-btn">
+                                        Pokaż Punkty POI
+                                    </a>
+                                {% endif %}
+
+                                {# Przycisk "Pokaż Sąsiadów" - widoczny tylko, gdy sąsiedzi nie są jeszcze pokazani #}
+                                {% if not show_neighbors %}
+                                    <a href="?show_map=1&show_pois={{ show_pois|yesno:'1,0' }}&show_neighbors=1" class="btn btn-sm btn-outline-secondary map-control-btn">
+                                        Pokaż Sąsiadów
+                                    </a>
+                                {% endif %}
+
+                                {# Informacja, jeśli wszystkie opcje są już włączone #}
+                                {% if show_pois and show_neighbors %}
+                                    <span class="text-muted small align-self-center">Wszystkie dodatkowe warstwy włączone.</span>
+                                {% endif %}
+                            </div>
+
+                            {{ folium_map|safe }}
+
+                        {% else %}
+                            {# --- WIDOK, GDY MAPA JEST WYŁĄCZONA --- #}
+                            <div class="alert alert-info text-center p-5">
+                                <h4 class="alert-heading">Mapa jest domyślnie ukryta</h4>
+                                <p>Aby przyspieszyć ładowanie strony, mapa dla tak dużego regionu nie jest generowana automatycznie.</p>
+                                <hr>
+                                <a href="?show_map=1" class="btn btn-primary" id="show-map-btn">
+                                    <i class="fas fa-map-marked-alt me-2"></i>Pokaż Mapę (HeatMapa)
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Pozostałe zakładki (bez zmian) -->
+                    {% if region.link %}
+                    <div class="tab-pane fade p-3" id="wikipedia-tab-pane" role="tabpanel">
+                        <div class="ratio ratio-16x9"><iframe src="{{ region.link }}" title="Wikipedia - {{ region.name }}" style="border: none;"></iframe></div>
+                    </div>
+                    {% endif %}
+
+                    <div class="tab-pane fade" id="poi-tab-pane" role="tabpanel">
+                        <div class="card-body">
+                            {% include "odznaki/geography/_poi_table_partial.html" with pois_on_page=pois_on_page %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+{% load static %}
+<script id="js-config" data-static-prefix="{% static '' %}"></script>
+<script src="{% static 'js/odznaki/region_detail.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'odznaki/base.html' %}
+{% load static %}
+{% load odznaki_extras %}
+
+{% block title %}{{ range_config.name }} - Łańcuchy Górskie{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'odznaki:geography-index' %}">Geografia</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ range_config.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>{{ range_config.name }}</h1>
+            {% if range_config.description %}<p class="lead text-muted">{{ range_config.description }}</p>{% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <ul class="nav nav-tabs" id="rangeTabs" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" id="map-tab" data-bs-toggle="tab" data-bs-target="#map-tab-pane" type="button"><i class="fas fa-map-marked-alt me-2"></i>Mapa</button></li>
+            {% if range_config.wiki_link %}<li class="nav-item" role="presentation"><button class="nav-link" id="wikipedia-tab" data-bs-toggle="tab" data-bs-target="#wikipedia-tab-pane" type="button"><i class="fa-brands fa-wikipedia-w me-2"></i>Wikipedia</button></li>{% endif %}
+            <li class="nav-item" role="presentation"><button class="nav-link" id="poi-tab" data-bs-toggle="tab" data-bs-target="#poi-tab-pane" type="button"><i class="fas fa-mountain me-2"></i>Punkty POI ({{ stats.total }})</button></li>
+        </ul>
+        <div class="tab-content" id="rangeTabsContent">
+
+            <!-- ZAKŁADKA Z MAPĄ - NOWA LOGIKA Z PRZYCISKIEM -->
+            <div class="tab-pane fade show active p-3" id="map-tab-pane" role="tabpanel">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="me-3 fw-bold align-self-center">Dodaj do mapy:</span>
+
+                    {# Przycisk "Pokaż POI" jest widoczny tylko, jeśli POI nie są jeszcze pokazane #}
+                    {% if not show_pois %}
+                        <a href="?show_pois=1" class="btn btn-sm btn-outline-primary map-control-btn">
+                            Pokaż Punkty POI
+                        </a>
+                    {% else %}
+                         <span class="text-muted small align-self-center">Warstwa z punktami POI jest włączona.</span>
+                    {% endif %}
+                </div>
+
+                <div class="card-body p-0" style="height: 600px;">
+                    {{ folium_map|safe }}
+                </div>
+            </div>
+
+            {% if range_config.wiki_link %}
+            <div class="tab-pane fade p-3" id="wikipedia-tab-pane" role="tabpanel">
+                <div class="ratio ratio-16x9"><iframe src="{{ range_config.wiki_link }}" title="Wikipedia - {{ range_config.name }}" style="border: none;"></iframe></div>
+            </div>
+            {% endif %}
+
+            <div class="tab-pane fade" id="poi-tab-pane" role="tabpanel">
+                <div class="card-body">
+                    {# Używamy naszego reużywalnego komponentu #}
+                    {% include "odznaki/geography/_poi_table_partial.html" with pois_on_page=pois_on_page %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script id="js-config" data-static-prefix="{% static '' %}"></script>
+<script src="{% static 'js/odznaki/region_detail.js' %}"></script>
+{% endblock %}

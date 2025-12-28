@@ -1,0 +1,110 @@
+{% extends "odznaki/base.html" %}
+{% load static %}
+{% load odznaki_extras %}
+
+{% block title %}Statystyki Roczne{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Roczne Podsumowanie Aktywności</h1>
+    <p class="lead">Przegląd Twojej aktywności turystycznej z podziałem na poszczególne lata.</p>
+
+    {# --- Główna Tabela Statystyk --- #}
+    <div class="card mb-5">
+        <div class="card-header">
+            <h5 class="mb-0">Podsumowanie w Tabeli</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="yearlyStatsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center">Rok</th>
+                            <th class="text-center">Liczba Wycieczek</th>
+                            <th class="text-end">Dystans</th>
+                            <th class="text-end">Suma Podejść</th>
+                            <th class="text-end">"Everest" Suma</th>
+                            <th class="text-end">Pkt GOT</th>
+                            <th class="text-center">Nowe POI</th>
+                            <th class="text-center">Odwiedzone Regiony</th>
+                            <th class="text-center">Zdobyte Odznaki</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stats in yearly_stats %}
+                            <tr>
+                                <td class="text-center fw-bold">{{ stats.year }}</td>
+                                <td class="text-center">{{ stats.trip_count }}</td>
+                                <td class="text-end">{{ stats.total_distance_km|floatformat:0 }} km</td>
+                                <td class="text-end">{{ stats.total_elevation_gain_m }} m</td>
+                                <td class="text-end">{{ stats.total_everest_m }} m</td>
+                                <td class="text-end">{{ stats.total_got_points }}</td>
+                                <td class="text-center">{{ stats.new_pois_count }}</td>
+                                <td class="text-center">{{ stats.visited_mesoregions_count }}</td>
+                                <td class="text-center">{{ stats.badges_earned_count }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4">Brak danych do wyświetlenia.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# --- Interaktywny Wykres Roczny --- #}
+    <div class="card">
+{# w odznaki/templates/odznaki/analytics/yearly_stats.html #}
+
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 me-3">Aktywność na Wykresie</h5>
+
+                {# Przyciski do przełączania danych na wykresie #}
+                <div class="btn-group btn-group-sm flex-wrap" role="group" id="chartDataType">
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-distance" value="distance" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="btn-distance">Dystans</label>
+
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-elevation" value="elevation" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-elevation">Podejścia</label>
+
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-got" value="got_points" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-got">Pkt GOT</label>
+
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-pois" value="new_pois" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btn-pois">Nowe POI</label>
+
+                    {# --- NOWE PRZYCISKI --- #}
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-trips" value="trips" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="btn-trips">Wycieczki</label>
+
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-everest" value="everest" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="btn-everest">"Everest"</label>
+
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-regions" value="regions" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="btn-regions">Regiony</label>
+
+                    <input type="radio" class="btn-check" name="chart-type" id="btn-badges" value="badges" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="btn-badges">Odznaki</label>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="height: 400px;">
+                <canvas id="yearlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+{{ chart_data|json_script:"chart-data-json" }}
+
+<script id="js-config" data-static-prefix="{% static '' %}"></script>
+<script src="{% static 'js/odznaki/yearly_stats.js' %}"></script>
+{% endblock %}

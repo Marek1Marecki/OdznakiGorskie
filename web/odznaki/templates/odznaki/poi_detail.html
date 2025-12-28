@@ -1,0 +1,129 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}{{ poi.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    {# Wiersz 1: Główne Informacje - NOWA STRUKTURA SIATKI #}
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Metryczka</h5></div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ poi.name }}</h4>
+                    {% if poi.secondary_name %}<h6 class="card-subtitle mb-2 text-muted">{{ poi.secondary_name }}</h6>{% endif %}
+                    <ul class="list-group list-group-flush mt-3">
+                        <li class="list-group-item"><strong>Kategoria:</strong> {{ poi.get_category_display }}</li>
+                        {% if poi.height %}<li class="list-group-item"><strong>Wysokość:</strong> {{ poi.height }} m n.p.m.</li>{% endif %}
+                        <li class="list-group-item"><strong>Mezoregion:</strong> {% if poi.mesoregion %}<a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=poi.mesoregion.pk %}" class="app-link">{{ poi.mesoregion.name }}</a>{% else %}Brak{% endif %}</li>
+                        {% if poi.voivodeship %}<li class="list-group-item"><strong>Województwo:</strong> {{ poi.voivodeship.name }}</li>{% endif %}
+                        {% if poi.code %}<li class="list-group-item"><strong>Kod:</strong> {{ poi.code }}</li>{% endif %}
+                    </ul>
+                </div>
+                {% if poi.parent or poi.children.all %}
+                <div class="card-footer">
+                    <h6 class="card-subtitle mb-2 text-muted">Obiekty powiązane</h6>
+                    {% if poi.parent %}<a href="{% url 'odznaki:poi-detail' poi_id=poi.parent.id %}" class="app-link small" title="Obiekt nadrzędny"><i class="fas fa-arrow-up me-1"></i> {{ poi.parent.name }}</a>{% endif %}
+                    {% if poi.children.all %}{% if poi.parent %}<br>{% endif %}{% for child in poi.children.all %}<a href="{% url 'odznaki:poi-detail' poi_id=child.id %}" class="app-link small" title="Obiekt podrzędny"><i class="fas fa-arrow-down me-1"></i> {{ child.name }}</a>{% if not forloop.last %}<br>{% endif %}{% endfor %}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 d-flex flex-column">
+                <div class="card-header {% if general_status == 'zdobyty' %}bg-success text-white{% elif general_status == 'do_ponowienia' %}bg-primary text-white{% elif general_status == 'niezdobyty' %}bg-danger text-white{% else %}bg-secondary text-white{% endif %} d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Status: {{ general_status|get_status_display_for_filter }}</h5>
+                    {% if poi_score > 0 %}<span class="badge bg-light text-dark fs-6" title="Aktualny potencjał punktowy w rankingu">{{ poi_score|floatformat:0 }} pkt</span>{% endif %}
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Ostatnie wizyty</h6>
+                    {% if visits_with_context %}<ul class="list-group list-group-flush">{% for item in visits_with_context|slice:":5" %}<li class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center"><div>{% if item.trip %}<a href="{% url 'odznaki:trip-detail' trip_id=item.trip.id %}" class="app-link fw-bold" title="Zobacz szczegóły wycieczki z tego dnia">{{ item.visit.visit_date|date:"d F Y" }}</a>{% else %}<strong class="text-dark">{{ item.visit.visit_date|date:"d F Y" }}</strong>{% endif %}</div><div>{% with got_booklet=item.visit.related_got_booklet %}{% if got_booklet %}<small class="text-muted"><i class="fa-solid fa-book-open me-1" title="Potwierdzenie w książeczce GOT"></i><a href="{{ got_booklet.get_absolute_url }}" class="app-link text-muted {% if got_booklet.scan %}fw-bold{% endif %}" title="Zobacz szczegóły książeczki">{{ got_booklet.name }}</a>{% if item.visit.entry_on_page %}, str. {{ item.visit.entry_on_page }}{% endif %}</small>{% endif %}{% endwith %}</div></li>{% endfor %}</ul>
+                    {% else %}<p class="text-muted mt-3">Brak zarejestrowanych wizyt.</p>{% endif %}
+                </div>
+                <div class="card-footer mt-auto bg-transparent border-0 text-center"><a href="{% url 'odznaki:poi-history' poi_id=poi.id %}" class="app-link small">Zobacz pełną historię i zdjęcia &raquo;</a></div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Wymagany w odznakach</h5></div>
+                <div class="list-group list-group-flush" style="overflow-y: auto; max-height: 300px;">
+                    {% for item in related_badges %}
+                        <a href="{% url 'odznaki:badge-detail' item.badge.id %}"
+                           class="list-group-item list-group-item-action {% if item.is_claimed %}list-group-item-success{% endif %}">
+                            <span class="app-link {% if not item.is_claimed %}link-primary{% endif %}">
+                                {{ item.badge.name }}
+                            </span>
+                            {% if item.is_claimed %}
+                                <span class="badge bg-success float-end"
+                                      data-bs-toggle="tooltip"
+                                      title="Odwiedziłeś POI w terminie wymaganym przez tę odznakę">
+                                    ✔
+                                </span>
+                            {% endif %}
+                        </a>
+                    {% empty %}<div class="card-body"><p class="text-muted">Ten punkt nie jest wymagany w żadnej odznace.</p></div>{% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Wiersz 2: Zakładki #}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <ul class="nav nav-tabs" id="poiExtraTabs" role="tablist">
+                    <li class="nav-item" role="presentation"><button class="nav-link active" id="map-tab" data-bs-toggle="tab" data-bs-target="#map-tab-pane" type="button"><i class="fas fa-map-marked-alt me-2"></i>Mapa Otoczenia</button></li>
+                    {% if poi.link and 'wikipedia.org' in poi.link %}<li class="nav-item" role="presentation"><button class="nav-link" id="wikipedia-tab" data-bs-toggle="tab" data-bs-target="#wikipedia-tab-pane" type="button"><i class="fa-brands fa-wikipedia-w me-2"></i>Wikipedia</button></li>{% endif %}
+                </ul>
+                <div class="tab-content" id="poiExtraTabsContent">
+                    <div class="tab-pane fade show active" id="map-tab-pane" role="tabpanel">
+                        {# --- POPRAWKA WYGLĄDU MAPY --- #}
+                        <div class="card-body">
+                             <div style="height: 500px; border: 1px solid #dee2e6; border-radius: .375rem; overflow: hidden;">
+                                {{ folium_map|safe }}
+                            </div>
+                        </div>
+                        {# --- KONIEC POPRAWKI --- #}
+                    </div>
+                    {% if poi.link and 'wikipedia.org' in poi.link %}<div class="tab-pane fade p-3" id="wikipedia-tab-pane" role="tabpanel"><div class="embed-responsive" style="height: 600px; overflow: hidden;"><iframe src="{{ poi.link }}" style="width: 100%; height: 100%; border: none;"></iframe></div></div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+{# --- WIERSZ 3: Galeria Zdjęć --- #}
+    {% if poi.photos.all %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">Galeria Zdjęć</h5></div>
+                <div class="card-body">
+                    <div id="photoCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for photo in poi.photos.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ photo.picture.url }}" class="d-block w-100" style="max-height: 70vh; object-fit: contain;" alt="{{ photo.description|default:poi.name }}" loading="lazy">
+                                    {% if photo.description %}
+                                    <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-2 py-1">
+                                        <p class="mb-0">{{ photo.description }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if poi.photos.all|length > 1 %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#photoCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#photoCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

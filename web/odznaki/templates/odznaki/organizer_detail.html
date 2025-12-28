@@ -1,0 +1,122 @@
+{% extends "odznaki/base.html" %}
+{% load odznaki_extras %}
+
+{% block title %}{{ organizer.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ organizer.name }}</h1>
+
+    {# Wiersz 1: Informacje Kluczowe #}
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Metryczka</h5></div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% if organizer.address %}<li class="list-group-item"><strong>Adres:</strong> {{ organizer.address }}</li>{% endif %}
+                        {% if organizer.email %}<li class="list-group-item"><strong>Email:</strong> {{ organizer.email }}</li>{% endif %}
+                        {% if organizer.link %}<li class="list-group-item"><strong>Strona WWW:</strong><a href="{{ organizer.link }}" target="_blank" class="app-link"> {{ organizer.link }}</a></li>{% endif %}
+                        {% if organizer.date_of_accession %}<li class="list-group-item"><strong>Data przystąpienia:</strong> {{ organizer.date_of_accession|date:"d F Y" }}</li>{% endif %}
+                        <li class="list-group-item"><strong>Wymaga książeczki:</strong> {% if organizer.booklet_required %}Tak{% else %}Nie{% endif %}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% if organizer.decoration_scan %}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Odznaka Klubowa</h5></div>
+                <div class="card-body text-center d-flex align-items-center justify-content-center">
+                    <img src="{{ organizer.decoration_scan.url }}"
+                         class="img-fluid rounded"
+                         alt="Odznaka klubowa"
+                         style="max-height: 200px; cursor: pointer;"
+                         data-bs-toggle="modal"
+                         data-bs-target="#imageModal"
+                         data-img-src="{{ organizer.decoration_scan.url }}"
+                         data-img-title="Odznaka Klubowa: {{ organizer.name }}"
+                         loading="lazy">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Wiersz 2: Lista Odznak #}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Odznaki Organizatora</h2>
+            {% if total_badge_count > 1 %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" action="{% url 'odznaki:organizer-detail' pk=organizer.pk %}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4"><label for="search" class="form-label">Szukaj po nazwie</label><input type="text" name="search" id="search" class="form-control" value="{{ current_filters.search }}"></div>
+                            <div class="col-md-3"><label for="status" class="form-label">Status</label><select name="status" id="status" class="form-select"><option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>Wszystkie</option><option value="not_started" {% if current_filters.status == 'not_started' %}selected{% endif %}>Nierozpoczęte</option><option value="in_progress" {% if current_filters.status == 'in_progress' %}selected{% endif %}>W trakcie</option><option value="achieved" {% if current_filters.status == 'achieved' %}selected{% endif %}>Zdobyte</option><option value="archival" {% if current_filters.status == 'archival' %}selected{% endif %}>Archiwalne</option></select></div>
+                            <div class="col-md-3"><label for="mesoregion" class="form-label">Mezoregion</label><select name="mesoregion" id="mesoregion" class="form-select"><option value="all">Wszystkie</option>{% for region in all_mesoregions %}<option value="{{ region.id }}" {% if current_filters.mesoregion == region.id %}selected{% endif %}>{{ region.name }}</option>{% endfor %}</select></div>
+                            <div class="col-md-2"><label for="sort" class="form-label">Sortuj</label><select name="sort" id="sort" class="form-select"><option value="name_asc" {% if current_filters.sort == 'name_asc' %}selected{% endif %}>Nazwa (A-Z)</option><option value="name_desc" {% if current_filters.sort == 'name_desc' %}selected{% endif %}>Nazwa (Z-A)</option><option value="progress_desc" {% if current_filters.sort == 'progress_desc' %}selected{% endif %}>Postęp (malejąco)</option><option value="progress_asc" {% if current_filters.sort == 'progress_asc' %}selected{% endif %}>Postęp (rosnąco)</option></select></div>
+
+                            <div class="col-md-12 text-end mt-3">
+                                <button type="submit" class="btn btn-primary">Filtruj</button>
+
+                                {# --- NOWY WARUNEK --- #}
+                                {% if current_filters.status != 'all' or current_filters.mesoregion != 'all' or current_filters.search %}
+                                    <a href="{% url 'odznaki:organizer-detail' pk=organizer.pk %}" class="btn btn-secondary">Resetuj</a>
+                                {% endif %}
+                                {# --- KONIEC WARUNKU --- #}
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {# --- NOWA SEKCJA Z PIGUŁKAMI AKTYWNYCH FILTRÓW --- #}
+            {% if active_filters %}
+            <div class="mb-3 d-flex align-items-center flex-wrap gap-2">
+                <span class="me-2"><small class="text-muted">Aktywne filtry:</small></span>
+                {% for filter in active_filters %}
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary fw-normal">
+                        <span class="opacity-75">{{ filter.label }}:</span> <strong>{{ filter.value }}</strong>
+                        <a href="{{ request.path }}?{{ request.GET|urlencode_without:filter.type }}" class="text-primary ms-1 text-decoration-none fw-bold" title="Usuń ten filtr">×</a>
+                    </span>
+                {% endfor %}
+                <a href="{% url 'odznaki:organizer-detail' pk=organizer.pk %}" class="ms-2 app-link small text-danger">Wyczyść wszystko</a>
+            </div>
+            {% endif %}
+            {# --- KONIEC NOWEJ SEKCJI --- #}
+
+            {% if badges_with_progress %}{% include "odznaki/includes/_badge_table_partial.html" with badges_list=badges_with_progress today=today parent_id=organizer.id hide_organizer_column=True %}{% else %}<div class="alert alert-info">Brak odznak spełniających wybrane kryteria.</div>{% endif %}
+        </div>
+    </div>
+
+
+
+
+    {# Wiersz 3: Zakładki #}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <ul class="nav nav-tabs" id="organizerExtraTabs" role="tablist">
+                    <li class="nav-item" role="presentation"><button class="nav-link active" id="map-tab" data-bs-toggle="tab" data-bs-target="#map-tab-pane" type="button"><i class="fas fa-map-marked-alt me-2"></i>Zasięg Geograficzny</button></li>
+                    {% if organizer.statute %}<li class="nav-item" role="presentation"><button class="nav-link" id="statute-tab" data-bs-toggle="tab" data-bs-target="#statute-tab-pane" type="button"><i class="fas fa-file-alt me-2"></i>Regulamin</button></li>{% endif %}
+                </ul>
+                <div class="tab-content" id="organizerExtraTabsContent">
+                    <div class="tab-pane fade show active" id="map-tab-pane" role="tabpanel">
+                        {# --- POPRAWKA WYGLĄDU MAPY --- #}
+                        <div class="card-body">
+                            <div style="height: 600px; border: 1px solid #dee2e6; border-radius: .375rem; overflow: hidden;">
+                                {{ folium_map|safe }}
+                            </div>
+                        </div>
+                        {# --- KONIEC POPRAWKI --- #}
+                    </div>
+                    {% if organizer.statute %}<div class="tab-pane fade" id="statute-tab-pane" role="tabpanel"><div class="card-body" style="max-height: 600px; overflow-y: auto;">{{ organizer.statute|safe }}</div></div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "odznaki/base.html" %}
+{% load static %}
+
+{% block title %}Oś Czasu Aktywności{% endblock %}
+
+{# --- NOWY BLOK ŁADUJĄCY ZEWNĘTRZNY CSS --- #}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/odznaki/timeline.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">Oś Czasu Aktywności</h1>
+
+    <div class="timeline">
+        {% for event in events %}
+            <div class="timeline-container {% cycle 'left' 'right' %}">
+                <div class="timeline-content">
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5>{{ event.event_date|date:"d F Y" }}</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if event.event_type == 'visit' %}
+                                <h6 class="card-title">
+                                    <span class="badge bg-info me-2">Wizyta</span>
+                                    <a href="{% url 'odznaki:poi-detail' poi_id=event.object.point_of_interest.id %}" class="app-link fw-bold">
+                                        {{ event.title }}
+                                    </a>
+                                </h6>
+                                {% if event.related_trip %}
+                                <p class="card-text mt-2">
+                                    <small class="text-muted">Część wycieczki:
+                                        <a href="{% url 'odznaki:trip-detail' trip_id=event.related_trip.id %}" class="app-link text-muted">
+                                            {{ event.related_trip }}
+                                        </a>
+                                    </small>
+                                </p>
+                                {% endif %}
+                            {% elif event.event_type == 'badge_level' %}
+                                <h6 class="card-title">
+                                    <span class="badge bg-success me-2">Odznaka</span>
+                                    <a href="{% url 'odznaki:badge-detail' badge_id=event.object.badge.id %}" class="app-link fw-bold">
+                                        {{ event.title }}
+                                    </a>
+                                </h6>
+                                {% if event.object.image %}
+                                    <img src="{{ event.object.image.url }}" class="img-fluid rounded mt-2" style="max-height: 100px;" alt="Obrazek odznaki" loading="lazy">
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="alert alert-info text-center">Brak zarejestrowanych aktywności.</div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

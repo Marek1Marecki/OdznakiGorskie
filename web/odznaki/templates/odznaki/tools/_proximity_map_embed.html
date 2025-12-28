@@ -1,0 +1,6 @@
+{# odznaki/templates/odznaki/tools/_proximity_map_embed.html #}
+{% if map_html %}
+    {{ map_html|safe }}
+{% else %}
+    <div class="alert alert-danger m-2">Nie można wygenerować mapy.</div>
+{% endif %}

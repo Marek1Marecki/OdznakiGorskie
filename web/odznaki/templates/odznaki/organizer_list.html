@@ -1,0 +1,53 @@
+{% extends "odznaki/base.html" %}
+{% load static %}
+
+{% block title %}Lista Organizatorów{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Organizatorzy Odznak Turystycznych</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="organizersTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nazwa Organizatora</th>
+                            <th class="text-center">Liczba Odznak</th>
+                            {# USUNIĘTA KOLUMNA 'Liczba Książeczek' #}
+                            <th class="text-center">Wymaga Książeczki</th>
+                            <th class="text-center">Wymaga Odzn. Klub.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for org in organizers_list %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'odznaki:organizer-detail' pk=org.pk %}" class="app-link fw-bold">
+                                        {{ org.name }}
+                                    </a>
+                                </td>
+                                <td class="text-center">{{ org.badge_count|default:0 }}</td>
+                                <td class="text-center">{% if org.booklet_required %}✔️{% else %}❌{% endif %}</td>
+                                <td class="text-center">{% if org.decoration_required %}✔️{% else %}❌{% endif %}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center p-4">Brak zdefiniowanych organizatorów.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+{% load static %}
+<script id="js-config" data-static-prefix="{% static '' %}"></script>
+<script src="{% static 'js/odznaki/simple_datatable.js' %}"></script>
+{% endblock %}

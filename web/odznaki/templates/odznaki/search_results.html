@@ -1,0 +1,99 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}Wyniki wyszukiwania dla "{{ query }}"{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h1 class="mb-4">
+        Wyniki wyszukiwania dla: <span class="text-primary">"{{ query }}"</span>
+    </h1>
+
+    {% if found_results %}
+        <div class="row">
+            <div class="col-12">
+
+                {# --- Sekcja 1: Znalezione Odznaki --- #}
+                {% if results.badges %}
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Znalezione Odznaki</h5></div>
+                    <div class="list-group list-group-flush">
+                        {% for badge in results.badges %}
+                            <a href="{% url 'odznaki:badge-detail' badge.id %}" class="list-group-item list-group-item-action">
+                                <strong>{{ badge.name }}</strong>
+                                {% if badge.organizer %}<small class="text-muted ms-2">- {{ badge.organizer.name }}</small>{% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {# --- Sekcja 2: Znalezione Punkty POI --- #}
+                {% if results.pois %}
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Znalezione Punkty Turystyczne</h5></div>
+                    <div class="list-group list-group-flush">
+                        {% for poi in results.pois %}
+                            <a href="{% url 'odznaki:poi-detail' poi_id=poi.id %}" class="list-group-item list-group-item-action">
+                                <strong>{{ poi.name }}</strong>
+                                <small class="text-muted ms-2">({{ poi.get_category_display }}, {{ poi.mesoregion.name|default:"Brak regionu" }})</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {# --- Sekcja 3: Znalezione Regiony --- #}
+                {% if results.regions %}
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Znalezione Regiony</h5></div>
+                    <div class="list-group list-group-flush">
+                        {% for region in results.regions %}
+                            <a href="{% url 'odznaki:geography-region-detail' model_name='mesoregion' pk=region.pk %}" class="list-group-item list-group-item-action">
+                                {{ region.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {# --- Sekcja 4: Znalezione Wycieczki --- #}
+                {% if results.trips %}
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Znalezione Wycieczki</h5></div>
+                    <div class="list-group list-group-flush">
+                        {% for trip in results.trips %}
+                            <a href="{% url 'odznaki:trip-detail' trip_id=trip.id %}" class="list-group-item list-group-item-action">
+                                <strong>{{ trip }}</strong>
+                                {% if trip.date %}<small class="text-muted ms-2">({{ trip.date|date:"Y-m-d" }})</small>{% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {# --- Sekcja 5: Znalezieni Organizatorzy --- #}
+                {% if results.organizers %}
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="mb-0">Znalezieni Organizatorzy</h5></div>
+                    <div class="list-group list-group-flush">
+                        {% for org in results.organizers %}
+                            <a href="{% url 'odznaki:organizer-detail' pk=org.pk %}" class="list-group-item list-group-item-action app-link">
+                                {{ org.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">Brak wyników</h4>
+            <p class="mb-0">Nie znaleziono żadnych pasujących obiektów dla frazy <strong>"{{ query }}"</strong>. Spróbuj wpisać inne hasło.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

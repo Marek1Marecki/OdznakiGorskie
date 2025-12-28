@@ -1,0 +1,55 @@
+{% extends "odznaki/base.html" %}
+{% block title %}Tablica Postępu Odznak{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Tablica Postępu w Odznakach</h1>
+
+    <div class="row">
+        {# --- Kolumna 1: Nierozpoczęte --- #}
+        <div class="col-lg-4">
+            <div class="card">
+                {# ZMIANA: Dodajemy klasę `bg-danger-subtle` #}
+                <div class="card-header bg-danger-subtle">
+                    <h3>Nierozpoczęte ({{ not_started_levels|length }})</h3>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in not_started_levels %}
+                        {% include "odznaki/includes/_kanban_card.html" with item=item %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# --- Kolumna 2: W trakcie --- #}
+        <div class="col-lg-4">
+            <div class="card">
+                {# ZMIANA: Dodajemy klasę `bg-warning-subtle` #}
+                <div class="card-header bg-warning">
+                    <h3>W trakcie ({{ in_progress_levels|length }})</h3>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in in_progress_levels %}
+                        {% include "odznaki/includes/_kanban_card.html" with item=item %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# --- Kolumna 3: Zdobyte --- #}
+        <div class="col-lg-4">
+            <div class="card">
+                {# ZMIANA: Dodajemy klasę `bg-success-subtle` #}
+                <div class="card-header bg-success-subtle">
+                    <h3>Zdobyte ({{ achieved_levels|length }})</h3>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in achieved_levels %}
+                        {% include "odznaki/includes/_kanban_card.html" with item=item %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

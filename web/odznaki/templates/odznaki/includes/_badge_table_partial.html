@@ -1,0 +1,140 @@
+{% load odznaki_extras %}
+{% load l10n %}
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle" id="badge-list-table">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 5%;"></th>
+                <th class="sortable-header" data-sort="name_asc" style="cursor: pointer;">
+                    Nazwa Odznaki
+                    <i class="fas fa-sort ms-1" style="opacity: 0.5;"></i>
+                </th>
+                {% if not hide_organizer_column %}
+                    <th class="organizer-column sortable-header" data-sort="organizer_asc" style="cursor: pointer;">
+                        Organizator
+                        <i class="fas fa-sort ms-1" style="opacity: 0.5;"></i>
+                    </th>
+                {% endif %}
+                <th style="width: 20%; cursor: pointer;" class="sortable-header" data-sort="progress_desc">
+                    Postęp
+                    <i class="fas fa-sort ms-1" style="opacity: 0.5;"></i>
+                </th>
+                <th class="text-center">Status</th>
+            </tr>
+        </thead>
+        <tbody class="accordion" id="badge-accordion-{{ parent_id|default:'main' }}">
+            {% for item in badges_list %}
+                {# --- Główny wiersz odznaki --- #}
+                <tr>
+                    <td class="text-center">
+                        {% if item.levels_with_progress %}
+                            <button class="btn btn-sm btn-outline-secondary py-0 px-2 toggle-button"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#levels-{{ item.badge.id }}"
+                                    aria-expanded="false"
+                                    data-bs-toggle-tooltip="tooltip"
+                                    title="Pokaż/ukryj stopnie odznaki">
+                                <span class="toggle-icon">+</span>
+                            </button>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'odznaki:badge-detail' item.badge.id %}" class="app-link fw-bold">
+                            {{ item.badge.name }}
+                        </a>
+                    </td>
+
+                    {# Komórka Organizator jest teraz warunkowa #}
+                    {% if not hide_organizer_column %}
+                    <td class="organizer-column">
+                        {% if item.badge.organizer %}
+                        <a href="{% url 'odznaki:organizer-detail' pk=item.badge.organizer.pk %}" class="app-link small text-muted">
+                            {{ item.badge.organizer.name }}
+                        </a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endif %}
+
+                    <td>
+                        <div class="progress"
+                             style="height: 1.2rem; background-color: transparent; border: 1px solid #dee2e6;"
+                             role="progressbar"
+                             aria-label="Postęp odznaki"
+                             aria-valuenow="{{ item.percentage|unlocalize|floatformat:0 }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            <div class="progress-bar"
+                                 style="width: {{ item.percentage|unlocalize }}%; {{ item.percentage|unlocalize|progress_bar_style }}">
+                                {% if item.percentage > 10 %}
+                                    {{ item.percentage|floatformat:0 }}%
+                                {% endif %}
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            {{ item.percentage|floatformat:0 }}% ({{ item.achieved_count }} z {{ item.required_count }} pkt)
+                        </small>
+                    </td>
+                    <td class="text-center">
+                        {% if item.badge.is_fully_achieved %}<span class="badge bg-success">Zdobyta</span>
+                        {% elif item.badge.end_date and item.badge.end_date < today %}<span class="badge bg-secondary">Archiwalna</span>
+                        {% elif item.achieved_count == 0 %}<span class="badge bg-warning text-dark">Nierozpoczęta</span>
+                        {% else %}<span class="badge bg-primary">W trakcie</span>{% endif %}
+                    </td>
+                </tr>
+
+                {# --- Ukryty wiersz ze szczegółami stopni --- #}
+                {% if item.levels_with_progress %}
+                <tr class="collapse-row">
+                    <td colspan="{% if hide_organizer_column %}4{% else %}5{% endif %}" class="p-0" style="border-top: none;">
+                        <div id="levels-{{ item.badge.id }}" class="collapse" data-bs-parent="#badge-accordion-{{ parent_id|default:'main' }}">
+                            <div class="p-3 bg-light-subtle">
+                                <h6 class="mb-3">Stopnie odznaki: <strong>{{ item.badge.name }}</strong></h6>
+                                {% for level_item in item.levels_with_progress %}
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-2 text-center">
+                                            {% if level_item.level.image %}
+                                                <img src="{{ level_item.level.image.url }}"
+                                                     alt="{{ level_item.level.get_level_display }}"
+                                                     class="img-fluid"
+                                                     style="max-height: 60px; cursor: pointer;"
+                                                     data-bs-toggle="modal"
+                                                     data-bs-target="#imageModal"
+                                                     data-img-src="{{ level_item.level.image.url }}"
+                                                     data-img-title="{{ item.badge.name }} - {{ level_item.level.get_level_display }}"
+                                                     loading="lazy">
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-3">{{ level_item.level.get_level_display }}</div>
+                                        <div class="col-7">
+                                            <div class="progress"
+                                                 style="height: 1rem; background-color: transparent; border: 1px solid #dee2e6;"
+                                                 role="progressbar"
+                                                 aria-label="Postęp stopnia"
+                                                 aria-valuenow="{{ level_item.percentage|unlocalize|floatformat:0 }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                <div class="progress-bar"
+                                                     style="width: {{ level_item.percentage|unlocalize }}%; {{ level_item.percentage|unlocalize|progress_bar_style }}">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                {{ level_item.percentage|floatformat:0 }}% ({{ level_item.achieved_count }} z {{ level_item.required_count }} pkt)
+                                            </small>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            {% empty %}
+                <tr><td colspan="{% if hide_organizer_column %}4{% else %}5{% endif %}" class="text-center"><div class="alert alert-info my-3">Brak odznak do wyświetlenia.</div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

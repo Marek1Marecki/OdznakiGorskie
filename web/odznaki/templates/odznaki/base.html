@@ -1,0 +1,90 @@
+<!-- odznaki/templates/odznaki/base.html -->
+{% load static %}
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="strict-origin-when-cross-origin"> {# Potrzebne dla niektórych warstw map #}
+
+    <title>{% block title %}Moje Odznaki Górskie{% endblock %}</title>
+
+    <!-- Biblioteki CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.datatables.net/v/bs5/dt-2.3.3/datatables.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- GŁÓWNE STYLE APLIKACJI -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <!-- Biblioteki JS (ładowane w <head> dla pewności) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
+
+</head>
+<body>
+
+    <!-- Spiner ładowania -->
+    <div id="page-loader">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Ładowanie...</span></div>
+    </div>
+
+    {# --- NOWY, MINIMALISTYCZNY PASEK NAWIGACYJNY --- #}
+    <nav class="navbar navbar-light sticky-top" style="background-color: #dee2e6;">
+        <div class="container-fluid">
+            <!-- Przycisk otwierający Offcanvas (po lewej) -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas" aria-controls="mainMenuOffcanvas">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Tytuł strony (wyśrodkowany) -->
+            <a class="navbar-brand mb-0 h1 mx-auto" href="{% url 'odznaki:dashboard' %}">
+                {% block page_title %}Odznaki Górskie{% endblock %}
+            </a>
+
+            <!-- Kontener na elementy po prawej stronie -->
+            <div class="d-flex align-items-center">
+                <form class="d-flex" role="search" method="get" action="{% url 'odznaki:search' %}">
+                    <input class="form-control form-control-sm me-2" type="search" name="q" placeholder="Szukaj..." value="{{ query|default:'' }}">
+                    <button class="btn btn-outline-success btn-sm" type="submit">Szukaj</button>
+                </form>
+                <ul class="navbar-nav ms-2"><li class="nav-item"><a class="nav-link" href="/admin/">Admin</a></li></ul>
+            </div>
+        </div>
+    </nav>
+
+    {# Dołączamy definicję panelu Offcanvas. Nie jest on widoczny, dopóki nie zostanie aktywowany. #}
+    {% include "odznaki/includes/_nav.html" %}
+
+    <!-- Główna treść strony -->
+    <main class="container mb-5">
+        {% if messages %}{% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}{% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Stopka -->
+    {% include "odznaki/includes/_footer.html" %}
+
+    <!-- Modal do obrazków -->
+    {% include "odznaki/includes/_image_modal.html" %}
+
+    <!-- Biblioteki JS (ładowane na końcu dla wydajności) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/v/bs5/dt-2.3.3/datatables.min.js"></script>
+
+    <!-- Skrypty globalne aplikacji -->
+    <script src="{% static 'js/odznaki/main.js' %}"></script>
+
+    <!-- Blok na skrypty specyficzne dla podstrony -->
+    {% block extra_js %}{% endblock %}
+
+</body>
+</html>

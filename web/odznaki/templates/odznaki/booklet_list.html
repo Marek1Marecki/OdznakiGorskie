@@ -1,0 +1,84 @@
+{% extends "odznaki/base.html" %}
+{% load static %}
+
+{% block title %}Lista Książeczek Turystycznych{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Lista Książeczek</h1>
+
+    {# --- Sekcja 1: Książeczki GOT --- #}
+    <h3 class="mt-5">Książeczki GOT</h3>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle datatable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nazwa Książeczki</th>
+                            <th class="text-center">Nr Kolejny</th>
+                            <th class="text-center">Status</th>
+                            <th>Okres Ważności Wycieczek</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booklet in got_booklets %}
+                            <tr>
+                                <td><a href="{% url 'odznaki:booklet-detail' booklet.pk %}" class="app-link fw-bold">{{ booklet.name }}</a></td>
+                                <td class="text-center">{{ booklet.sequence_number|default:"-" }}</td>
+                                <td class="text-center">{% if booklet.is_possessed %}<span class="badge bg-success">W posiadaniu</span>{% else %}<span class="badge bg-secondary">Brak</span>{% endif %}</td>
+                                <td>{{ booklet.valid_from|date:"Y-m-d"|default:"" }} - {{ booklet.valid_to|date:"Y-m-d"|default:"" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# --- Sekcja 2: Pozostałe Książeczki --- #}
+    <h3 class="mt-5">Pozostałe Książeczki (Organizatorów / Dedykowane)</h3>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle datatable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nazwa Książeczki</th>
+                            <th>Typ</th>
+                            <th>Organizator</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booklet in other_booklets %}
+                            <tr>
+                                <td><a href="{% url 'odznaki:booklet-detail' booklet.pk %}" class="app-link fw-bold">{{ booklet.name }}</a></td>
+                                <td>{{ booklet.get_booklet_type_display }}</td>
+                                <td>
+                                    {# --- POPRAWKA JEST TUTAJ --- #}
+                                    {% if booklet.organizer %}
+                                        <a href="{% url 'odznaki:organizer-detail' booklet.organizer.pk %}" class="app-link small text-muted">
+                                            {{ booklet.organizer.name }}
+                                        </a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{% if booklet.is_possessed %}<span class="badge bg-success">W posiadaniu</span>{% else %}<span class="badge bg-secondary">Brak</span>{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+{% load static %}
+<script id="js-config" data-static-prefix="{% static '' %}"></script>
+<script src="{% static 'js/odznaki/simple_datatable.js' %}"></script>
+{% endblock %}

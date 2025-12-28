@@ -1,0 +1,36 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{# Wstawiamy media formularza na sam koniec sekcji <head> #}
+{% block extrahead %}{{ block.super }}{{ media }}{% endblock %}
+
+{% block field_sets %}
+    {% for fieldset in adminform %}
+        {% if fieldset.name != "Szczegóły Wycieczki" %}
+            {% include "admin/includes/fieldset.html" %}
+        {% endif %}
+    {% endfor %}
+
+    <fieldset class="module aligned">
+        <h2>Szczegóły Wycieczki</h2>
+        <div class="form-row" style="display: flex; gap: 20px; align-items: flex-start;">
+            <div style="flex: 2; min-width: 0;">
+                <label>Mapa Wycieczki:</label>
+                {% if trip_map_html %}
+                    {{ trip_map_html|safe }}
+                {% else %}
+                    <p class="readonly">Zapisz wycieczkę i dodaj segmenty GPX, aby zobaczyć mapę.</p>
+                {% endif %}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="form-row field-description">
+                    <div>
+                        {{ adminform.form.description.label_tag }}
+                        {{ adminform.form.description }}
+                        <p class="help">{{ adminform.form.description.help_text|safe }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+{% endblock %}

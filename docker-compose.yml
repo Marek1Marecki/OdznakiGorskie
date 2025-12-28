@@ -1,0 +1,53 @@
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    volumes:
+      # Dane bazy trzymamy w nazwanym wolumenie (bezpieczne i szybkie)
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=odznaki_db
+      - POSTGRES_USER=odznaki_user
+      - POSTGRES_PASSWORD=tajne_haslo_dev
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odznaki_user -d odznaki_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: ./web  # Wskazujemy katalog z Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./web:/app          # Montujemy kod (Live Reload)
+      - ./web/media:/app/media # Montujemy media
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE=postgres
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=odznaki_db
+      - POSTGRES_USER=odznaki_user
+      - POSTGRES_PASSWORD=tajne_haslo_dev
+      - SECRET_KEY=dev_secret_key
+      - DEBUG=1
+    depends_on:
+      db:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

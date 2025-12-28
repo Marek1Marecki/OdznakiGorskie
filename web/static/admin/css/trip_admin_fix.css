@@ -1,0 +1,14 @@
+/* static/admin/css/trip_admin_fix.css */
+
+/* Znajdujemy wiersz, który zawiera jednocześnie pole mapy i pole opisu */
+.form-row.field-trip_map_preview.field-description {
+    display: flex;  /* Używamy Flexbox do ułożenia elementów obok siebie */
+    gap: 20px;      /* Dodajemy odstęp między mapą a opisem */
+    align-items: flex-start; /* Wyrównujemy elementy do góry */
+}
+
+/* Mówimy każdemu z pól, aby zajęło dostępną przestrzeń */
+.form-row.field-trip_map_preview.field-description > .flex-container {
+    flex: 1; /* Każdy element (mapa, opis) zajmie równą część przestrzeni */
+    min-width: 0; /* Ważne dla poprawnego działania flexbox z dużymi elementami */
+}

@@ -1,0 +1,16 @@
+{% extends "odznaki/base.html" %}
+
+{% block title %}Mapa Śladów GPX{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Mapa Śladów GPX</h1>
+    <p class="lead">Poniższa mapa cieplna wizualizuje gęstość Twoich zarejestrowanych tras GPX. Im "gorętszy" (bardziej czerwony) obszar, tym częściej tamtędy wędrowałeś.</p>
+
+    <div class="card">
+        <div class="card-body p-0" style="height: 80vh;"> {# Mapa zajmuje 80% wysokości ekranu #}
+            {{ folium_map|safe }}
+        </div>
+    </div>
+</div>
+{% endblock %}
